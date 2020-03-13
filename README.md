@@ -1,5 +1,5 @@
 
-![](https://i.imgur.com/lVafsDN.png)
+![](https://i.imgur.com/oZ3gHmt.png)
 # AFK on core's toolkit  
 Utility script for Dungeon Defenders Awakened.  
 <sub>Support resolutions below 1440x900 as well as 1920x1080 and 2560x1440. I couldn't test other ones, so tell me if you're having any issue.  </sub>
