@@ -1,6 +1,6 @@
 ;Download https://www.autohotkey.com/download/ahk-install.exe to use this script.
 ;Made by AFK on core#0614 , message me on discord if you need anything or have suggestions!
-v:=200313.12 ;Script version, yearmonthday
+v:=200314 ;Script version, yearmonthday
 ;###SETTINGS: (Change to false or 0 to disable option)
 DEBUG := 0 ;Change it to false to turn off the annoying windows
 
