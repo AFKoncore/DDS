@@ -605,7 +605,6 @@ Update(){
 	hObject.Send() ;Send the "get" request
 	newVer:=subStr(hObject.ResponseText,1,6) ;Set the "text" variable to the response
 	if(newVer>v&&ErrorLevel==0){
-	msgbox, %newVer%>%v%
 		MsgBox,4,Update, A new version of the script is available. Would you like to downlod it?
 		IfMsgBox, Yes
 			doTheUpdate := true
