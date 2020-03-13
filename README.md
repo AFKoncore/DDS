@@ -1,1 +1,1 @@
-msgbox, %itdid%
+msgbox, It did!
