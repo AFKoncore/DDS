@@ -1,4 +1,3 @@
 200314:
-This a long sentence to try out how it will display in a message box
-Displaying a changelog on update would be pretty neat
-Right?
+- Will now display changelog on update
+- Improved [S]ell and [L]ock and made it compatible with the opt-in patch version
