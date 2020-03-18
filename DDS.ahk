@@ -1,15 +1,14 @@
 ;Download https://www.autohotkey.com/download/ahk-install.exe to use this script.
 ;Made by AFK on core#0614 , message me on discord if you need anything or have suggestions!
-v:=200314 ;Script version, yearmonthday
+v:=200316 ;Script version, yearmonthday
 ;###SETTINGS: (Change to false or 0 to disable option)
 DEBUG := 0 ;Change it to false to turn off the annoying windows
 
 boostKeybind:= "c" ;What key do you press to activate your boost (default is "c")
 abilityKeybind:= "f" ;What key do you press to activate your first ability (default is "f")
-sellFirstItemWarning := true 
 sellMouseOverWarning := false
 ;___
-;TODO: error log. wait 2 buildphase after warmup?. close chat before G. Spam repair at build phase? Read wave number at PopUp() at wave14. Fix chacing issue with update(). warning if unsupported res
+;TODO: Spam repair at build phase? warning if unsupported res
 
 CoordMode, Pixel, Screen
 CoordMode, Mouse, Screen ;Change coordinate to be relative to the screen and not the current active window
@@ -66,14 +65,13 @@ Loop{ ;Main Loop
 #ifWinActive, ahk_exe DDS-Win64-Shipping.exe
 ~s:: ;S to sell, L to lock item under cursor
 F5:: SellMouseOver() ;Sells item under your cursor
-~l:: LockMouseOver() ;Lock item under your cursor
-F6:: SellFirstItem() ;Sells top left item of the inventory
-F7:: ;Log() ;create a .txt with a line of information about the cursor pos
+~l:: 
+F6:: LockMouseOver() ;Lock item under your cursor
 ~^LButton:: ;Ctrl+Click or F10 to AutoFire
 F10:: AutoFire() ;Auto attack depending on current hero
 F11:: AutoCharge() ;Spam right click on apprentice or tower boost on Monk (make sure abilityKeybind [line 9] is set the correct key)
 
-Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;!\ issues with 1280x1024
+Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues with 1280x1024
 	global DEBUG
 	global WinID
 	global WinX
@@ -84,10 +82,6 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;!\ issues 
 	global phaseColorY
 	global heroColorX
 	global heroColorY
-	global invMinX
-	global invMinY
-	global invMaxX
-	global invMaxY
 	
 	;Check for Update
 	Update()
@@ -101,11 +95,14 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;!\ issues 
 	;__
 	WinGet, WinID,, ahk_exe DDS-Win64-Shipping.exe
 	WinRatio:= SubStr(WinWidth/WinHeight,3,1) ;"1.(3)3:4/3 - 1.(6):16/10 - 1.(7)7:6/9"
-	if(A_ScreenWidth==WinWidth && A_ScreenHeight==WinHeight){
+	
 		if(WinX==0 && WinY==0){
-			fullscreenWindowed := true
+			if(A_ScreenWidth==WinWidth && A_ScreenHeight==WinHeight){
+				fullscreenWindowed := true
+			}
+		}else{
+			MsgBox, You're not running the game in Borderless Windowed. `n The script might not work, sorry about that.
 		}
-	}
 	
 	;Set coordinate to check for with CheckHeroColor(), CheckPhaseColor and the expected items' position in the inventory
 	phaseColorX := WinWidth*0.97 ;Same X coord for all screen ratio	
@@ -115,35 +112,17 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;!\ issues 
 		phaseColorY := WinHeight*0.0945 
 		heroColorX := WinWidth*0.039
 		heroColorY := WinHeight*0.111
-		invMinX := WinWidth*0.453
-		if(SubStr(WinWidth/WinHeight,4,1) == 9){ ;[1280x960]
-			invMinX := WinWidth*0.47
-		}
-		invMaxX := WinWidth*0.975
-		invMinY := WinHeight*0.366
-		invMaxY := WinHeight*0.860
 	}
 	;16/10
 	if(WinRatio == 6){
 		if(WinWidth == 1280){ ;[1280x800] [1280x768]
 			phaseColorY := WinHeight*0.097 
 			heroColorY := WinHeight*0.112
-			invMinX := WinWidth*0.527
-			if(SubStr(WinWidth/WinHeight,4,1) == 6){ ;[1280x768]
-				invMinX := WinWidth*0.543
-			}
-			invMaxX := WinWidth*0.960
-			invMinY := WinHeight*0.368
-			invMaxY := WinHeight*0.863
-		}else{ ;[1440x900]
+		}else{ ;[1440x900] ;765 285 / 1340 765
 			phaseColorX := WinWidth*0.964
 			phaseColorY := WinHeight*0.057
 			heroColorX := WinWidth*0.026
 			heroColorY := WinHeight*0.073
-			invMinX := WinWidth*0.522
-			invMaxX := WinWidth*0.957
-			invMinY := WinHeight*0.330		
-			invMaxY := WinHeight*0.826
 			if(WinWidth !=1440){
 				Progress, B X0 ZHn0 CW272822 CT60D9EF,- WARNING - `n This script is untested on your current resolution so it might misfunction. Please tell AFK on core#0614 what resolution you're using. Thanks.
 				Sleep, 7500
@@ -155,19 +134,11 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;!\ issues 
 			phaseColorY:= 65
 			heroColorX := 55
 			heroColorY := 95
-			invMinX := 1005
-			invMaxX := 1840
-			invMinY := 395
-			invMaxY := 990
 			if(!fullscreenWindowed){
 				phaseColorX:= phaseColorX+WinWidthWithTitle-WinWidth
 				phaseColorY:= phaseColorY+WinHeightWithTitle-WinHeight
 				heroColorX := heroColorX 
 				heroColorY := heroColorY+(WinHeightWithTitle-WinHeight)/1.8
-				invMinX := invMinX+(WinWidthWithTitle-WinWidth)/2
-				invMaxX := invMaxX+(WinWidthWithTitle-WinWidth)/2
-				invMinY := invMinY+20+(WinHeightWithTitle-WinHeight)/2-(WinWidthWithTitle-WinWidth)/2
-				invMaxY := invMaxY+20+(WinHeightWithTitle-WinHeight)/2-(WinWidthWithTitle-WinWidth)/2
 			}
 		}
 	}
@@ -176,19 +147,11 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;!\ issues 
 		phaseColorY:= WinHeight* 0.099
 		heroColorX := WinWidth*0.0285
 		heroColorY := WinHeight*0.115
-		invMinX := WinWidth*0.566
-		invMaxX := WinWidth*0.960
-		invMinY := WinHeight*0.371
-		invMaxY := WinHeight*0.865
 		if(WinWidth == 2560){ ;Dirty fix for [2560x1440]
 			phaseColorX:= 2475
 			phaseColorY:= 85
 			heroColorX := 60
 			heroColorY := 105
-			invMinX := 1435
-			invMaxX := 2440
-			invMinY := 475
-			invMaxY := 1190
 		}
 	}
 	if(WinWidth == 1920 && WinHeight == 1080){ ;Dirty fix for [1920x1080]
@@ -196,28 +159,21 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;!\ issues 
 		phaseColorY:= 60
 		heroColorX := 45
 		heroColorY := 80
-		invMinX := 1080
-		invMaxX := 1830
-		invMinY := 360
-		invMaxY := 860
 	}
-	;Adjust coordinate to window's position if windowed
-	if(WinX>0){
-		;phaseColorX := WinX+phaseColorX
-		;heroColorX := WinX+heroColorX
-		invMinX := invMinX+WinX
-		invMaxX := invMaxX+WinX
-	}
-	if(WinY>0){
-		;phaseColorY := WinY+phaseColorY
-		;heroColorY := WinY+heroColorY
-		invMinY := invMinY+WinY
-		invMaxY := invMaxY+WinY
+	;21/9
+	if(SubStr(WinWidth/WinHeight,1,3) == 2.3){
+		phaseColorY:= WinHeight*0.0574
+		heroColorX := WinWidth*0.0156 
+		heroColorY := WinHeight*0.077
+		if(!fullscreenWindowed){
+				phaseColorX:= phaseColorX+WinWidthWithTitle-WinWidth
+				phaseColorY:= phaseColorY+WinHeightWithTitle-WinHeight
+				heroColorX := heroColorX 
+				heroColorY := heroColorY+(WinHeightWithTitle-WinHeight)/1.8
+			}
 	}
 
 	if(DEBUG){ ;Display game's resolution & position in DEBUG mode
-		;%A_ScreenWidth%x%A_ScreenHeight% (%monitorCount%)
-		;MsgBox, Window Size: %WinWidthWithTitle%x%WinHeightWithTitle% Client Size:%WinWidth%x%WinHeight%
 		Progress, B X0 ZHn0 CW272822 CT60D9EF,= DEBUG MODE = `n x%WinX% y%WinY% [%WinWidth%x%WinHeight%]`n`nTurn it off by editing script line 5
 		Sleep, 750
 		Progress, OFF
@@ -236,7 +192,8 @@ PixelColorSimple(pc_x, pc_y){ ;Gets pixel color even if the window is in backgro
         pc_c .= ""
         SetFormat, IntegerFast, %pc_fmtI%
         DllCall("ReleaseDC", "UInt", pc_wID, "UInt", pc_hDC)
-        return pc_c
+		pc_c := "0x" SubStr("000000" SubStr(pc_c, 3), -5)
+        return pc_c ;
     }
 }
 
@@ -255,8 +212,9 @@ ActivateAutoG(){
 }
 G(){
 	ControlSend,,{g down}, ahk_exe DDS-Win64-Shipping.exe
-	Sleep, 420
+		Sleep, 420
 	ControlSend,,{g up}, ahk_exe DDS-Win64-Shipping.exe
+
 }
 PopUp(){ ;Put the game in focus
 	IfWinNotActive, ahk_exe DDS-Win64-Shipping.exe
@@ -275,8 +233,8 @@ CheckPhaseColor(){ ; Check the color of the ribbon behind Build Phase/Combat Pha
 	
 	if(DEBUG){
 		pX:= WinX+WinWidth-300
-		Progress, 6:OFF
 		Progress, 4:OFF
+		Progress, 6:OFF
 	}
 	ColorCheck := PixelColorSimple(phaseColorX, phaseColorY)
 	StringTrimLeft, ColorCheck, ColorCheck, 2
@@ -284,9 +242,20 @@ CheckPhaseColor(){ ; Check the color of the ribbon behind Build Phase/Combat Pha
 	G := Format("{:u}", "0x"+SubStr(ColorCheck, 3, 2))
 	B := Format("{:u}", "0x"+SubStr(ColorCheck, 5, 2))
 	;Color : RGB value
-	phaseColorX:=phaseColorX+WinX
-	phaseColorY:=phaseColorY+WinY
-	if(R>105 && R<168 && G>75 && G<125 && B<20){
+	;pX:=phaseColorX+WinX
+	pY:=phaseColorY+WinY
+	if(DEBUG){
+		vert := pY-4
+		hor := phaseColorX+WinX-4
+		Progress, 4:B X%hor% Y%pY% CW00FFFF H2 W9
+		Progress, 6:B X%phaseColorX% Y%vert% CWFF0000 H9 W2 ;red
+	}
+	if(R<10 && G>75 && G<155 && B>120){
+		if(DEBUG){
+			Progress, 5:B Y0 cw%ColorCheck% ZHn0 W300 X%pX%,End of map (%R% %G% %B%) 
+		}
+		return "mapover"
+	}else if(R>105 && R<168 && G>75 && G<125 && B<20){
 		if(DEBUG){
 			Progress, 5: B Y0 cw%ColorCheck% ZHn0 W300 H29 X%pX%,Warmup phase (%R% %G% %B%)
 		}
@@ -301,29 +270,13 @@ CheckPhaseColor(){ ; Check the color of the ribbon behind Build Phase/Combat Pha
 			Progress, 5:B Y0 cw%ColorCheck% ZHn0 W300 H29 X%pX%,Combat phase (%R% %G% %B%)
 		}
 		return "combat"
-	}else if(R<10 && G>50 && G<90 && B>95 && B<140){
-		if(DEBUG){
-			Progress, 5:B Y0 cw%ColorCheck% ZHn0 W300 H29 X%pX%,End of map (%R% %G% %B%)
-		}
-		return "mapover"
-	}else if(R>52 && R<60 && G>45 && G<52 && B>82 && B<90){
-		if(DEBUG){
-			Progress, 5:B Y0 cw%ColorCheck% ZHn0 W300 H29 X%pX%,Inventory(%R% %G% %B%)
-		}
-		return "inventory"
-	}else if(R>155 && R<190 && G>75 && G<110){
+	}else if(R>120 && R<190 && G>65 && G<110){
 		if(DEBUG){
 			Progress, 5:B Y0 cw%ColorCheck% ZHn0 W300 H29 X%pX%,Tavern(%R% %G% %B%)
 		}
 		return "tavern"
 	}else if(DEBUG){
-		Progress, 5:B Y0 cw%ColorCheck% ZHn0 W300 H29 X%pX%,No color match(%R% %G% %B%)
-	}
-	if(DEBUG){
-		vert := phaseColorY-4
-		hor := phaseColorX-4
-		Progress, 6:B X%hor% Y%phaseColorY% CW00FFFF H2 W9
-		Progress, 4:B X%phaseColorX% Y%vert% CWFF0000 H9 W2 ;red
+		Progress, 5:B Y0 cw%ColorCheck% ctFFFFFF ZH0 W300 H29 X%pX%,No color match(%R% %G% %B%)
 	}
 }
 CheckHeroColor(){ ;Check the color of the background behind the hero's head icon
@@ -335,10 +288,9 @@ CheckHeroColor(){ ;Check the color of the background behind the hero's head icon
 	global WinHeight
 	global heroColorX
 	global heroColorY
-	ppX:= heroColorX-5
-	ppY:= heroColorY-5
-pX := WinX
+	
 	if(DEBUG){
+		pX := WinX
 		Progress, 2:OFF
 		Progress, 3:OFF
 	}
@@ -347,20 +299,20 @@ pX := WinX
 	R := Format("{:u}", "0x"+SubStr(ColorCheck, 1, 2))
 	G := Format("{:u}", "0x"+SubStr(ColorCheck, 3, 2))
 	B := Format("{:u}", "0x"+SubStr(ColorCheck, 5, 2))
-	heroColorX:=heroColorX+WinX
-	heroColorY:=heroColorY+WinY
+	pX:=heroColorX+WinX
+	pY:=heroColorY+WinY
 	if(DEBUG){
-		vert := heroColorY-4
-		hor := heroColorX-4
-		Progress, 2:B X%hor% Y%heroColorY% CW00FFFF H2 W9
-		Progress, 3:B X%heroColorX% Y%vert% CWFF0000 H9 W2
+		vert := pY-4
+		hor := pX-4
+		Progress, 2:B X%hor% Y%pY% CW00FFFF H2 W9
+		Progress, 3:B X%pX% Y%vert% CWFF0000 H9 W2
 	}
-	if(R>12 && R<105 && G>86 && G<160&& B>132 && B<220){
+	if(R>12 && R<105 && G>60 && G<160&& B>99 && B<220){
 		if(DEBUG){
 			Progress, B X%pX% Y0 cw%ColorCheck% ZHn0,Apprentice (%R% %G% %B%)
 		}
 		return "apprentice"
-	}else if(R>143 && R<240 && G>70 && G<120 && B>34 && B<50){
+	}else if(R>143 && R<245 && G>49 && G<120 && B>20 && B<50){
 		if(DEBUG){
 			Progress, B X%pX% Y0 cw%ColorCheck% ZHn0,Monk (%R% %G% %B%)
 		}
@@ -370,7 +322,7 @@ pX := WinX
 			Progress, B X%pX% Y0 cw%ColorCheck% ZHn0,Squire (%R% %G% %B%)
 		}
 		return "squire"
-	}else if(G>84 && G<170 && B>49 && B<75){
+	}else if(G>60 && G<170 && B>39 && B<75){
 		if(DEBUG){
 			Progress, B X%pX% Y0 cw%ColorCheck% ZHn0,Huntress (%R% %G% %B%)
 		}
@@ -387,7 +339,7 @@ AutoFire(){ ;Trigger normal attack depending on class
 	global boostKeybind
 	
 	hero := CheckHeroColor()
-	If(hero == "apprentice" || hero == "huntress"){ 
+	If(hero == "apprentice" || hero == "huntress" || hero == "squire"){ 
 		if(hero == "huntress"){
 			ControlSend,,{%boostKeybind%}, ahk_exe DDS-Win64-Shipping.exe
 		}
@@ -406,22 +358,6 @@ AutoFire(){ ;Trigger normal attack depending on class
 		ControlSend,,{Enter}, ahk_exe DDS-Win64-Shipping.exe
 		Sleep, 250
 		ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,U
-	}
-	if(hero == "squire"){ 
-		ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,,,D
-		Loop{ ;melee fast atk
-			Sleep, 86
-			ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,
-		}
-	}
-	
-	if(0){ ;MONK
-		Loop{ 
-			ControlClick,, ahk_exe DDS-Win64-Shipping.exe,
-			Sleep, 60
-			ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,	
-			Sleep, 20
-		}
 	}
 }
 AutoCharge(){ ;Spam right click on apprentice, towerboost on monk
@@ -445,203 +381,92 @@ AutoCharge(){ ;Spam right click on apprentice, towerboost on monk
 	}
 }
 
-SellFirstItem(){
-	IfWinNotActive, ahk_exe DDS-Win64-Shipping.exe
-	{
-		return
-	}
-	global DEBUG
-	global sellFirstItemWarning
-	global invMinX
-	global invMinY
-	global invMaxX
-	global invMaxY
-	if(sellFirstItemWarning){
-		Progress,B zh0 fs18 CW272822 CT60D9EF,, Press F6 again to sell the first item in your inventory.,Sorting by Item Power (Inverted) is recommanded.
-		sellFirstItemWarning := false
-		Sleep, 3250
-		Progress, Off
-	}else{
-		ItemSize := (invMaxX-invMinX)/7
-		;First item position on screen
-		X:= invMinX+0.5*ItemSize
-		Y:= invMinY+0.5*ItemSize
-		;Sell button position
-		X2:=X+ItemSize*0.78
-		Y2:=Y+ItemSize*1.928
-		If(DEBUG){
-			MouseMove, X, Y
-			Sleep, 250
-			Click, Right
-			Sleep, 350
-			MouseMove, X2, Y2
-		}else{
-			ControlClick, x%X% y%Y%, ahk_exe DDS-Win64-Shipping.exe,,RIGHT
-			Sleep, 175
-			ControlClick, x%X2% y%Y2%, ahk_exe DDS-Win64-Shipping.exe
-		}
-	}
-}
 SellMouseOver(){
-	if(CheckPhaseColor() != "inventory"){
-		return
-	}
 	global DEBUG
-	global sellMouseOverWarning
-	global invMinX
-	global invMinY
-	global invMaxX
-	global invMaxY
-	if(sellMouseOverWarning){
-			Progress,B zh0 fs18 CW272822 CT60D9EF,, Press F5 again to sell the item below your cursor
-			sellMouseOverWarning := false
-			Sleep, 2250
-			Progress, Off
-	}else{
+	global WinWidth
+	global WinHeight	
+	ColorCheck := PixelColorSimple(WinWidth*0.942, WinHeight*0.946)
+	StringTrimLeft, ColorCheck, ColorCheck, 2
+	R := Format("{:u}", "0x"+SubStr(ColorCheck, 1, 2))
+	G := Format("{:u}", "0x"+SubStr(ColorCheck, 3, 2))
+	B := Format("{:u}", "0x"+SubStr(ColorCheck, 5, 2))
+	if(R>70 && R<80 && G>75 && G<86 && B>130 && B<150 || R>30 && R<50 && G>30 && G<50 && B>70 && B<80){ ;check if the inventory is open by looking at the Equip button color
 		MouseGetPos, mX, mY
-		if(mX>invMinX && mX<invMaxX && mY>invMinY && mY<invMaxY){
-			ItemSize := (invMaxX-invMinX)/7
-			slotX :=Floor((mX-invMinX)/ItemSize)+0.5
-			slotY :=Floor((mY-invMinY)/ItemSize)+0.5
-			;Item position on screen
-			X:= invMinX+slotX*ItemSize
-			Y:= invMinY+slotY*ItemSize
-			;Sell button position
-			X2:=X+ItemSize*0.90
-			Y2:=Y+ItemSize*1.98
-			
-			If(DEBUG){
-				MouseMove, X, Y
-				Sleep, 250
-				Click, Right
-				Sleep, 350
-				MouseMove, X2, Y2
-			}else{
-				ControlClick, x%X% y%Y%, ahk_exe DDS-Win64-Shipping.exe,,RIGHT
-				Sleep, 175
-				ControlClick, x%X2% y%Y2%, ahk_exe DDS-Win64-Shipping.exe
-			}
+		ControlClick,x%mX% y%mY%, ahk_exe DDS-Win64-Shipping.exe,,RIGHT
+		Sleep, 50
+		ControlSend,,{Up}, ahk_exe DDS-Win64-Shipping.exe
+		Sleep, 50
+		if(!DEBUG){
+			ControlSend,,{Enter}, ahk_exe DDS-Win64-Shipping.exe
 		}
+		Sleep, 100
 	}
 }
 LockMouseOver(){
 	global DEBUG
-	global sellMouseOverWarning
-	global invMinX
-	global invMinY
-	global invMaxX
-	global invMaxY
-	if(CheckPhaseColor() != "inventory"){
-		return
-	}
-	MouseGetPos, mX, mY
-	if(mX>invMinX && mX<invMaxX && mY>invMinY && mY<invMaxY){
-		ItemSize := (invMaxX-invMinX)/7
-		slotX :=Floor((mX-invMinX)/ItemSize)+0.5
-		slotY :=Floor((mY-invMinY)/ItemSize)+0.5
-		;Item position on screen
-		X:= invMinX+slotX*ItemSize
-		Y:= invMinY+slotY*ItemSize
-		;Lock button position
-		X2:=X+ItemSize*0.90
-		Y2:=Y+ItemSize*1.5
-		
-		If(DEBUG){
-			MouseMove, X, Y
-			Sleep, 250
-			Click, Right
-			Sleep, 350
-			MouseMove, X2, Y2
-		}else{
-			ControlClick, x%X% y%Y%, ahk_exe DDS-Win64-Shipping.exe,,RIGHT
-			Sleep, 175
-			ControlClick, x%X2% y%Y2%, ahk_exe DDS-Win64-Shipping.exe
+	global WinWidth
+	global WinHeight	
+	ColorCheck := PixelColorSimple(WinWidth*0.942, WinHeight*0.946)
+	StringTrimLeft, ColorCheck, ColorCheck, 2
+	R := Format("{:u}", "0x"+SubStr(ColorCheck, 1, 2))
+	G := Format("{:u}", "0x"+SubStr(ColorCheck, 3, 2))
+	B := Format("{:u}", "0x"+SubStr(ColorCheck, 5, 2))
+	if(R>70 && R<80 && G>75 && G<86 && B>65 && B<85 || R>30 && R<50 && G>30 && G<50 && B>70 && B<80){ ;check if the inventory is open by looking at the Equip button color
+		MouseGetPos, mX, mY
+		ControlClick,x%mX% y%mY%, ahk_exe DDS-Win64-Shipping.exe,,RIGHT
+		Sleep, 10
+		ControlSend,,{Up 2}, ahk_exe DDS-Win64-Shipping.exe
+		Sleep, 10
+		if(!DEBUG){
+			ControlSend,,{Enter}, ahk_exe DDS-Win64-Shipping.exe
 		}
 	}
 }
 DisplayInventoryBorder(){ ;used for DEBUG
 	global DEBUG
-	global invMinX
-	global invMinY
-	global invMaxX
-	global invMaxY
-	global displayInv
-	
-	if(!DEBUG){
+	global WinWidth
+	global WinHeight	
+	invColor := PixelColorSimple(WinWidth*0.942, WinHeight*0.946)
+	if(!DEBUG){ 
 		return
 	}
+		pX := WinWidth*0.942
+		pY := WinHeight*0.946
+		vert := pY-4
+		hor := pX-4
+		Progress, 10:B X%hor% Y%pY% CW00FFFF H2 W9
+		Progress, 9:B X%pX% Y%vert% CWFF0000 H9 W2 
+	ColorCheck := PixelColorSimple(WinWidth*0.942, WinHeight*0.946)
+	StringTrimLeft, ColorCheck, ColorCheck, 2
+	R := Format("{:u}", "0x"+SubStr(ColorCheck, 1, 2))
+	G := Format("{:u}", "0x"+SubStr(ColorCheck, 3, 2))
+	B := Format("{:u}", "0x"+SubStr(ColorCheck, 5, 2))	
+	pX:= WinWidth-50
+	pY:= WinHeight-75
+	Progress, 8:B Y%pY% cw%ColorCheck% ctFFFFFF ZHn0 W40 H55 fs11 X%pX%,%R%`n%G%`n%B%
+	return
 	
-	if(CheckPhaseColor()=="inventory"){	
-		if(!displayInv){
-		pMinY := invMinY-4
-		Progress, 6:B X%invMinX% Y%pMinY% CW00FFFF H4 W55
-		pMinX := invMinX-4
-		Progress, 9:B X%pMinX% Y%invMinY% CWFF0000 H55 W4
-		pMaxX := invMaxX-55
-		Progress, 8:B X%pMaxX% Y%invMaxY% CW00FFFF H4 W55
-		pMaxY := invMaxY-55
-		Progress, 7:B X%invMaxX% Y%pMaxY% CWFF0000 H55 W4
-		pMinX := invMinX-4
-		pMinY := invMinY-58
-		Progress, 10: B Y%pMinY% X%invMinX%  ZH0 CW272822 CT60D9EF, Press F5 to try selling the item below your mouse
-		displayInv := true
-		}
-	}else{
-		Progress, 10: OFF
-		Progress, 9: OFF
-		Progress, 8: OFF
-		Progress, 7: OFF
-		Progress, 6: OFF
-		displayInv := 
-	}
 }
 Update(){
-	versionURL := "https://raw.githubusercontent.com/AFKoncore/DDS/master/lastVersionNumber?fakeParam=42"
-	downloadURL:= "https://raw.githubusercontent.com/AFKoncore/DDS/master/DDS.ahk"
+	t:=A_TickCount ;/add a number at the end of the URL to avoid caching issues
+	versionURL := "https://raw.githubusercontent.com/AFKoncore/DDS/master/lastVersionNumber?t="%t%
+	downloadURL:= "https://raw.githubusercontent.com/AFKoncore/DDS/master/DDS.ahk?t="%t%
 	global v
 	ErrorLevel := 0
 	hObject:=ComObjCreate("WinHttp.WinHttpRequest.5.1") ;Create the Object
 	hObject.Open("GET",versionURL) ;Open communication
 	hObject.Send() ;Send the "get" request
-	newVer:=subStr(hObject.ResponseText,1,6) ;Set the "text" variable to the response
-	if(newVer>v&&ErrorLevel==0){
+	;newVer:=subStr(hObject.ResponseText,1,6) 
+	newVer:=StrSplit(hObject.ResponseText, ":")
+	if(newVer.1>v && ErrorLevel==0){
 		MsgBox,4,Update, A new version of the script is available. Would you like to downlod it?
 		IfMsgBox, Yes
 			doTheUpdate := true
 		if(doTheUpdate){
-			UrlDownloadToFile, %downloadURL%, AFK on core.ahk
+			UrlDownloadToFile, %downloadURL%,  %A_ScriptName%
+			changelog:=newVer.2
+			MsgBox,Changelog:%changelog%
 			Reload
 		}
-	}
-}
-Log(){
-	global WinWidth
-	global WinHeight
-	; - - -
-	WinRatio:= WinWidth/WinHeight ;SubStr(WinWidth/WinHeight,3,1)
-	MouseGetPos, mX, mY
-	mXP := Round(mX/WinWidth,3)
-	mYP := Round(mY/WinHeight,3)
-	; - - -
-	if(1){
-	FileAppend ,
-	(
-	
-[%WinWidth%x%WinHeight%](%WinRatio%)
-x%mX% y%mY% (%mXP% %mYP%)
-	), AHK log.txt
-	}
-	if(0){
-	MouseGetPos, mX, mY
-	PixelGetColor, ColorCheck, mX, mY, RGB 
-	StringTrimLeft, ColorCheck, ColorCheck, 2
-	R := Format("{:u}", "0x"+SubStr(ColorCheck, 1, 2))
-	G := Format("{:u}", "0x"+SubStr(ColorCheck, 3, 2))
-	B := Format("{:u}", "0x"+SubStr(ColorCheck, 5, 2))
-		FileAppend ,
-	(
-	
-R:%R% G:%G% B:%B%
-	), AHK log.txt
 	}
 }
