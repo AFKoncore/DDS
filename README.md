@@ -6,7 +6,7 @@ Utility script for Dungeon Defenders Awakened.
 ## Keybinds
 **S** (or **F5**): Sell item under cursor.  
 **L**: Lock item under cursor.  
-**F6**: Sell first item in inventory.  
 **F8**: Reset.  
 **Ctrl+G** (or **F9**): Auto G (only in build phase if not wave 1).  
 **Ctrl+Click** (or **F10**): Auto fire.  
+**F11** (on Monk): Spam tower boost.
