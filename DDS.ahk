@@ -504,7 +504,8 @@ Update(){
 			doTheUpdate := true
 		if(doTheUpdate){
 			UrlDownloadToFile, %downloadURL%, %A_ScriptName%
-			changelog:=newVer.2
+						changelog:= StrSplit(newVer.2, "|")
+			changelog:= changelog.1
 			MsgBox,Changelog:%changelog%
 			Reload
 		}
