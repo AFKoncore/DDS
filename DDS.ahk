@@ -1,6 +1,6 @@
 ;Download https://www.autohotkey.com/download/ahk-install.exe to use this script.
 ;Made by AFK on core#0614 , message me on discord if you need anything or have suggestions!
-v:=200316 ;Script version, yearmonthday
+v:=200409 ;Script version, yearmonthday
 ;###SETTINGS: (Change to false or 0 to disable option)
 DEBUG := 0 ;Change it to false to turn off the annoying windows
 
@@ -22,6 +22,8 @@ if(!DEBUG){
 
 Loop{ ;Main Loop
 	global waitNextCombatPhase
+	global abilitySpamToggle
+	global abilityTimer
 	phase := CheckPhaseColor() ;get the color of the ribbon top right of the screen to know the current phase
 	if(phase == "warmup" && !waitNextCombatPhase){
 		G() 
@@ -42,34 +44,46 @@ Loop{ ;Main Loop
 		;} ;WTF AHK WHY U ERROR?!
 	}else if(phase == "combat"){
 		waitNextCombatPhase := false
+		if(abilitySpamToggle){
+			AbilitySpam()
+		}
 	}	
+	sleepTime := 0
 	if(!DEBUG){
-		Sleep, 5000	
+		sleepTime := sleepTime+5000	
 		if(actionTaken){
-			Sleep, 114*1000 ;Will loop faster if in debug mode
+			waitNextCombatPhase := true
 			actionTaken := false
 		}
-	}else{ ;Display various debug information
+		if(abilitySpamToggle && phase == "combat" && A_TickCount+sleepTime > abilityTimer){ ;If the ability is to be used soon it will wait for a shorter amount of time
+			sleepTime := A_TickCount-abilityTimer
+		}
+		Sleep, sleepTime
+	}else{ ;DEBUG: Display various debug information
 		CheckHeroColor() 
 		DisplayInventoryBorder()
-		Sleep, 750
 		if(actionTaken){
 			Sleep, 10*1000
 			actionTaken := false
 		}
 	}
 }
-~F8:: Reload ;Restart fresh, use it to stop AutoCharge
+;~w:: 
+;ControlSend,,{e down}, ahk_exe DDS-Win64-Shipping.exe
+;Sleep, 10
+;ControlSend,,{e up}, ahk_exe DDS-Win64-Shipping.exe
+;return
+;~c:: Click
+~F8:: Reload ;Restart fresh, use it to stop AbilitySpam
 ^g:: ;Ctrl+G and F9 both activate auto G
 ~F9:: ActivateAutoG()
 #ifWinActive, ahk_exe DDS-Win64-Shipping.exe
 ~s:: ;S to sell, L to lock item under cursor
 F5:: SellMouseOver() ;Sells item under your cursor
-~l:: 
-F6:: LockMouseOver() ;Lock item under your cursor
+F6:: Click ;  LockMouseOver() ;Lock item under your cursor
 ~^LButton:: ;Ctrl+Click or F10 to AutoFire
 F10:: AutoFire() ;Auto attack depending on current hero
-F11:: AutoCharge() ;Spam right click on apprentice or tower boost on Monk (make sure abilityKeybind [line 9] is set the correct key)
+F11:: ActivateAbilitySpam() ;AbilitySpam() ;Spam right click on apprentice or tower boost on Monk (make sure abilityKeybind [line 9] is set the correct key)
 
 Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues with 1280x1024
 	global DEBUG
@@ -82,7 +96,6 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues
 	global phaseColorY
 	global heroColorX
 	global heroColorY
-	
 	;Check for Update
 	Update()
 	;Get game's size
@@ -212,7 +225,8 @@ ActivateAutoG(){
 }
 G(){
 	ControlSend,,{g down}, ahk_exe DDS-Win64-Shipping.exe
-		Sleep, 420
+		SoundBeep, 450, 50
+		Sleep, 370
 	ControlSend,,{g up}, ahk_exe DDS-Win64-Shipping.exe
 
 }
@@ -360,23 +374,47 @@ AutoFire(){ ;Trigger normal attack depending on class
 		ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,U
 	}
 }
-AutoCharge(){ ;Spam right click on apprentice, towerboost on monk
+
+ActivateAbilitySpam(){
+	global abilitySpamToggle
+	global abilityKeybind
+	global abilityTimer
+	abilitySpamToggle:= !abilitySpamToggle
+
+	if(CheckHeroColor() == "monk"){
+		if(abilitySpamToggle){
+			Progress, 10: B zh0 fs18 CW272822 CT60D9EF W215,, Spam Tower Boost (%abilityKeybind%): ON
+			AbilitySpam()
+			Sleep, 400
+		}else{
+			Progress, 10:B zh0 fs18 CW272822 CT60D9EF W190,, Spam Tower Boost: OFF
+			Sleep, 200
+		}
+		Progress, 10: OFF
+	}
+}
+AbilitySpam(){ ;Spam right click on apprentice, towerboost on monk
 	global DEBUG
 	global abilityKeybind
+	global abilityTimer
+	global abilitySpamToggle
 	hero := CheckHeroColor()
-	If(hero == "apprentice"){ ;Spam right click on apprentice
+	if(0){ ;hero == "apprentice"){ ;Spam right click on apprentice
 		Loop{
 			ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,D
-			Sleep, 225
+			Sleep, 50
 			ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,U
-			Sleep, 1000
+			Sleep, 250
 		}
 	}
-	If(hero == "monk"){ ;Spam tower boost
-		Loop{
+	if(hero == "monk"){ ;Spam tower boost
+		if(A_TickCount>abilityTimer){
+			if(CheckPhaseColor() !="combat"){
+				return
+			}
 			ControlSend,,{%abilityKeybind%}, ahk_exe DDS-Win64-Shipping.exe
-			Sleep, 20100
-			;Also check if not in build phase or inventory
+			useEvery := 20100
+			abilityTimer := A_TickCount+useEvery
 		}
 	}
 }
@@ -393,8 +431,10 @@ SellMouseOver(){
 	if(R>70 && R<80 && G>75 && G<86 && B>130 && B<150 || R>30 && R<50 && G>30 && G<50 && B>70 && B<80){ ;check if the inventory is open by looking at the Equip button color
 		MouseGetPos, mX, mY
 		ControlClick,x%mX% y%mY%, ahk_exe DDS-Win64-Shipping.exe,,RIGHT
-		Sleep, 50
-		ControlSend,,{Up}, ahk_exe DDS-Win64-Shipping.exe
+		Sleep, 75
+		ControlSend,,{Up down}, ahk_exe DDS-Win64-Shipping.exe
+		Sleep, 75
+		ControlSend,,{Up up}, ahk_exe DDS-Win64-Shipping.exe
 		Sleep, 50
 		if(!DEBUG){
 			ControlSend,,{Enter}, ahk_exe DDS-Win64-Shipping.exe
@@ -463,7 +503,7 @@ Update(){
 		IfMsgBox, Yes
 			doTheUpdate := true
 		if(doTheUpdate){
-			UrlDownloadToFile, %downloadURL%,  %A_ScriptName%
+			UrlDownloadToFile, %downloadURL%, %A_ScriptName%
 			changelog:=newVer.2
 			MsgBox,Changelog:%changelog%
 			Reload
