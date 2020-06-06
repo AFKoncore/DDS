@@ -1,7 +1,7 @@
 
 ![](https://i.imgur.com/oZ3gHmt.png)
 # AFK on core's toolkit  
-Utility script for Dungeon Defenders Awakened.  
+Utility AutoHotKey script for Dungeon Defenders Awakened.  
 <sub>The scipt reads colors on screen to know current game phase and hero being played, tell me your screen resolution if you're having issues. Only support main monitor for now on multiple monitors setups.</sub>
 ## Keybinds
 **F8**: Reload the script.  
