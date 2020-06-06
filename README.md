@@ -7,7 +7,7 @@ Utility script for Dungeon Defenders Awakened.
 **F8**: Reload the script.  
 **Ctrl+G** (or **F9**): Auto G (only in build phase if not wave 1).  
 **Ctrl+Click** (or **F10**): Auto fire.  
-**Ctrl+RightClick**(or **F11**): 
-  Monk - Spam tower boost, 
-  Apprentice - Hero boost & right click, S
-  quire - Hold Block (and heals when alt-tabbed)
+**Ctrl+RightClick**(or **F11**):   
+  Monk - Spam tower boost,  
+  Apprentice - Hero boost & right click,   
+  Squire - Hold Block (and heals when alt-tabbed)  
