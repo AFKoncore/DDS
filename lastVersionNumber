@@ -1,3 +1,6 @@
+200903:
+- Fixed a bunch of things that broke over time.
+- Added some small QoL features and settings, for now you need to edit the file (line 5) to configure them.|
 200409:
 - Improved auto Tower Buff to only use the ability during combat phase. Can now auto G and auto F at the same time.
 (F11 to activate, change ability keybind in the script if you changed your bind in game)|
