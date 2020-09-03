@@ -1,6 +1,6 @@
 200409:
 - Improved auto Tower Buff to only use the ability during combat phase. Can now auto G and auto F at the same time.
-(F11 to activate, change ability keybind in the script if you changed you bind in game)|
+(F11 to activate, change ability keybind in the script if you changed your bind in game)|
 200316:
 - Will now display changelog on update.
 - Improved [S]ell and [L]ock and made it compatible with the opt-in patch version.|
