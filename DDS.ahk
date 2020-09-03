@@ -421,7 +421,6 @@ AbilitySpam(hero){ ;Spam right click on apprentice, towerboost on monk
 				useEvery := 7650
 				abilityTimer := A_TickCount+useEvery
 			}else{ ;no genie - sad
-				;msgbox, %boostKeybind%
 				ControlSend,,{ %boostKeybind% down}, ahk_exe DDS-Win64-Shipping.exe
 				Sleep, 100
 				ControlSend,,{%boostKeybind% up}, ahk_exe DDS-Win64-Shipping.exe
