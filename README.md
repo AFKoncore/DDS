@@ -10,4 +10,4 @@ Utility AutoHotKey script for Dungeon Defenders Awakened.
 **Ctrl+RightClick**(or **F11**):   
   Monk - Spam tower boost,  
   Apprentice - Hero boost & right click,   
-  Squire - Hold Block (and heals when alt-tabbed)  
+  Squire - Hold Block
