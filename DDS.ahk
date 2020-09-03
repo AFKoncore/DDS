@@ -582,7 +582,7 @@ Update(){
 	;newVer:=subStr(hObject.ResponseText,1,6) 
 	newVer:=StrSplit(hObject.ResponseText, ":")
 	if(newVer.1>v && ErrorLevel==0){
-		MsgBox,4,Update, A new version of the script is available. Would you like to downlod it?
+		MsgBox,4,Update, A new version of the script is available. Would you like to download it?
 		IfMsgBox, Yes
 			doTheUpdate := true
 		if(doTheUpdate){
