@@ -1,6 +1,6 @@
 ;Download https://www.autohotkey.com/download/ahk-install.exe to use this script.
 ;Made by AFK on core#0614 , message me on discord if you need anything or have suggestions!
-v:=200903 ;Script version, yearmonthday
+v:=200906 ;Script version, yearmonthday
 ;#####vvvSETTINGS#### 
 DEBUG:=0
 readColorInBackground:=1 
@@ -62,7 +62,7 @@ Loop{ ;Main Loop
 			}
 			waitNextCombatPhase := true	
 		}	
-	}else if(phase == "combat" || phase == "tavern"){	
+	}else if(phase == "combat" || phase == "tavern" || phase == "boss"){	
 		waitNextCombatPhase := false
 		if(abilitySpamToggle){
 			AbilitySpam(hero)
@@ -216,7 +216,7 @@ CheckPhaseColor(){ ; Check the color of the ribbon behind Build Phase/Combat Pha
 	global phaseColorY
 	global DEBUG
 	
-	pX:= WinX+WinWidth-300
+	pX:=WinWidth-300
 	Progress, 4:OFF
 	Progress, 5:OFF
 	Progress, 6:OFF
@@ -264,6 +264,11 @@ CheckPhaseColor(){ ; Check the color of the ribbon behind Build Phase/Combat Pha
 			Progress, 5:B Y0 cw%ColorCheck% ZHn0 W300 H29 X%pX%,Tavern (%R% %G% %B%)
 		}
 		return "tavern"
+	}else if(R>120 && R<150&& G<10 && B>100 && B<130){
+		if(DEBUG){
+			Progress, 5:B Y0 cw%ColorCheck% ZHn0 W300 H29 X%pX%,Boss phase (%R% %G% %B%)
+		}
+		return "boss"
 	}else if(R>120 && R<190 && G>20 && G<60 && B<10){
 		if(DEBUG){
 			Progress, 5:B Y0 cw%ColorCheck% ZHn0 W300 H29 X%pX%,Loading (%R% %G% %B%)
@@ -307,12 +312,12 @@ CheckHeroColor(){ ;Check the color of the background behind the hero's head icon
 		Progress, 2:B X%hor% Y%pY% CW00FFFF H2 W9
 		Progress, 3:B X%pX% Y%vert% CWFF0000 H9 W2
 	}
-	if(R<20 && G>60 && G<160&& B>99 && B<220){
+	if(R<20 && G>60 && G<160&& B>99 && B<250){
 		if(DEBUG){
 			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Apprentice (%R% %G% %B%)
 		}
 		return "apprentice"
-	}else if(R>143 && R<245 && G>49 && G<120 && B>20 && B<50){
+	}else if(R>143 && R<260 && G>49 && G<120 && B<50){
 		if(DEBUG){
 			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Monk (%R% %G% %B%)
 		}
@@ -322,7 +327,7 @@ CheckHeroColor(){ ;Check the color of the background behind the hero's head icon
 			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Squire (%R% %G% %B%)
 		}
 		return "squire"
-	}else if(G>60 && G<170 && B>39 && B<75){
+	}else if(R< 50 && G>60 && G<170 && B>30 && B<75){
 		if(DEBUG){
 			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Huntress (%R% %G% %B%)
 		}
