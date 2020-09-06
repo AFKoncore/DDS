@@ -1,3 +1,6 @@
+200906:
+- Boss phase will be considered as a combat phase.
+- Tweaked internal color treshhold for some heroes that were'nt recognized on some resolutions.
 200903:
 - Fixed a bunch of things that broke over time.
 - Added some small QoL features and settings, for now you need to edit the file (line 5) to configure them.|
