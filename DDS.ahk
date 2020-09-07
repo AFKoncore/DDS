@@ -527,8 +527,8 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues
 		if(WinWidth == 2560){ ;Dirty fix for [2560x1440]
 			phaseColorX:= 2475
 			phaseColorY:= 85
-			heroColorX := 60
-			heroColorY := 105
+			heroColorX := 65
+			heroColorY := 115
 		}
 	}
 	if(WinWidth == 1920 && WinHeight == 1080){ ;Dirty fix for [1920x1080]
