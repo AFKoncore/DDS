@@ -549,6 +549,12 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues
 				heroColorY := heroColorY+(WinHeightWithTitle-WinHeight)/1.8
 			}
 	}
+	;32/9
+	if(SubStr(WinWidth/WinHeight,1,3) == 3.5){
+		phaseColorY:= WinHeight*0.0574
+		heroColorX := WinWidth*0.0085
+		heroColorY := WinHeight*0.077
+	}
 
 	if(DEBUG){ ;Display game's resolution & position in DEBUG mode
 		Progress, B X0 ZHn0 CW272822 CT60D9EF,= DEBUG MODE = `n x%WinX% y%WinY% [%WinWidth%x%WinHeight%]`n`nTurn it off by editing script line 5
