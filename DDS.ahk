@@ -1,6 +1,6 @@
 ;Download https://www.autohotkey.com/download/ahk-install.exe to use this script.
 ;Made by AFK on core#0614 , message me on discord if you need anything or have suggestions!
-v:=200906 ;Script version, yearmonthday
+v:=201120 ;Script version, yearmonthday
 ;#####vvvSETTINGS#### 
 DEBUG:=0
 readColorInBackground:=1 
