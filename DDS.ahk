@@ -3,11 +3,10 @@
 v:=221109 ;Script version, yearmonthday
 ;#####vvvSETTINGS#### 
 DEBUG:=0
-readColorInBackground:=1
+readColorInBackground:=0
 boostKeybind:="c"
 abilityKeybind:="f"
 dropManaKeybind:="m"
-beepSoundOnG:=0
 AutoFocusTheGame:=1
 GAtWarmUpPhase:=1
 PressSpaceOnLoading:=1
@@ -21,7 +20,8 @@ DropManaAtBuildPhase:=0
 #SingleInstance Force
 CoordMode, Pixel, Screen
 CoordMode, Mouse, Screen ;Change coordinate to be relative to the screen and not the current active window
-autoG := false
+autoG:=false
+groupG:=false
 Setup() ;Get game resolution and calculate various X/Y coordinates
 if(!DEBUG){
 	Progress, B Y0 ZH0 CW272822 CT60D9EF,Welcome to AFK on core's toolkit!
@@ -91,6 +91,8 @@ Loop{ ;Main Loop
 ; Keybinds
 F8:: Reload ;Restart fresh, use it to stop AbilitySpam
 F9:: ActivateAutoG() ;F9 activates auto G
+^Del:: ExitApp
+^F9:: ToggleGroupG()
 #ifWinActive, ahk_exe DDS-Win64-Shipping.exe
 F10:: AutoFire() ;Auto attack depending on current hero
 F11:: ActivateAbilitySpam() ;AbilitySpam() ;Spam right click on apprentice or tower boost on Monk (make sure abilityKeybind [line 9] is set the correct key)
@@ -123,6 +125,7 @@ ActivateAutoG(){
 	global readColorInBackground
 	global phaseColorX
 	global phaseColorY
+	global groupG
 	
 	autoG := !autoG
 	Gui()
@@ -131,67 +134,34 @@ ActivateAutoG(){
 			G()
 			waitNextCombatPhase := true
 		}
-		if(readColorInBackground){
-			Progress,B zh0 fs18 CW272822 CT7CFC00 W65,, G ON.
-			Sleep, 500
-			Progress, OFF
-		}else{ ;Display a warning when reading color on screen (and not from the window even if background)
-		pX := phaseColorX-355
-		pY := phaseColorY-15
-		Progress, B M zh0 X%pX% Y%pY% CW272822 CT60D9EF W350,Will press G once if this area is green --> `So keep it visible on screen.
-		pX := phaseColorX-5
-		pY := phaseColorY-5
-		Progress, 10:B M zh0 CW60D9EF X%pX% Y%pY% W1 H10
-		pX := phaseColorX+5
-		pY := phaseColorY-5
-		Progress, 9:B M zh0 CW60D9EF X%pX% Y%pY% W1 H10
-		pX := phaseColorX-5
-		pY := phaseColorY+5
-		Progress, 8:B M zh0 CW60D9EF X%pX% Y%pY% W10 H1
-		pX := phaseColorX-5
-		pY := phaseColorY-5
-		Progress, 7:B M zh0 CW60D9EF X%pX% Y%pY% W10 H1
-		;/---
-		pX := phaseColorX-8
-		pY := phaseColorY-8
-		Progress, 6:B M zh0 CWW272822 X%pX% Y%pY% W3 H14
-		pX := phaseColorX+6
-		pY := phaseColorY-8
-		Progress, 5:B M zh0 CWW272822 X%pX% Y%pY% W3 H14
-		pX := phaseColorX-8
-		pY := phaseColorY+6
-		Progress, 4:B M zh0 CWW272822 X%pX% Y%pY% W17 H3
-		pX := phaseColorX-8
-		pY := phaseColorY-8
-		Progress, 3:B M zh0 CWW272822 X%pX% Y%pY% W14 H3
-		Sleep, 2500
-		Progress, OFF
-		Progress, 10: OFF
-		Progress, 9: OFF
-		Progress, 8: OFF
-		Progress, 7: OFF
-		Progress, 6: OFF
-		Progress, 5: OFF
-		Progress, 4: OFF
-		Progress, 3: OFF
-		}
+		Progress,B zh0 fs18 CW272822 CT7CFC00 W65,, G ON.
+		Sleep, 500
+		Progress, OFF	
 	}else{
 		Progress,B zh0 fs18 CW272822 CTDC143C W70,, G OFF.
+		groupG:=false
 		Sleep, 500
 		Progress, OFF
 	}
 }
 
 G(){
-	global beepSoundOnG
+	global groupG
+	if(groupG){
+		ControlSend,,{ctrl down}, ahk_exe DDS-Win64-Shipping.exe
+		Sleep, 100
+	}
 	ControlSend,,{g down}, ahk_exe DDS-Win64-Shipping.exe
-	if(beepSoundOnG){
-		SoundBeep, 450, 50
-		Sleep, 370
+	if(groupG){
+		Sleep, 1680
 	}else{
 		Sleep, 420
 	}
 	ControlSend,,{g up}, ahk_exe DDS-Win64-Shipping.exe
+	Sleep, 100
+	if(groupG){
+		ControlSend,,{ctrl up}, ahk_exe DDS-Win64-Shipping.exe
+	}
 }
 
 PopUp(){ ;Put the game in focus
@@ -561,6 +531,19 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues
 
 ToggleDebug(){
 	global DEBUG:=!DEBUG
+}
+
+ToggleGroupG(){
+	global groupG:=!groupG
+	global autoG
+	if(groupG){
+		autoG := true
+		Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W215,, GroupG: ON
+	}else{
+		Progress, 10:B zh0 fs18 CW272822 CTDC143C W215,, GroupG: OFF
+	}
+	Sleep, 400
+	Progress, 10: OFF
 }
 
 ; #Script self-editing

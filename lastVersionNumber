@@ -1,9 +1,10 @@
 221109:
 - Added Warden and Rouge support (Only tested on 1920x1080, 3072x1920)
 - Tweaked monk and apprentice ability timer.
-- Adjusted autoupdate for Wurzle's fork.
 - Removed GenieOnAppBoost for redundancy.
-- Removed Squire hold block for redundancy.|
+- Removed Squire hold block for redundancy.
+- Added kill script bind.
+- Added groupG.|
 
 200906:
 - Boss phase will be considered as a combat phase.
