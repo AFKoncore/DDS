@@ -14,6 +14,4 @@ Utility AutoHotKey script for Dungeon Defenders Awakened.
 - Rouge - 
 - Warden -
 
-**Del**: Stops the script
-
 <sub>**Note:** Updated by Wurzle#7136 for parity for current update, I have not been able to play the game much so feedback is appriciated - feel free to message</sub>

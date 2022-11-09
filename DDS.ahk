@@ -95,7 +95,6 @@ F9:: ActivateAutoG() ;F9 activates auto G
 F10:: AutoFire() ;Auto attack depending on current hero
 F11:: ActivateAbilitySpam() ;AbilitySpam() ;Spam right click on apprentice or tower boost on Monk (make sure abilityKeybind [line 9] is set the correct key)
 ^!d:: ToggleDebug() ;Ctrl+Alt+D
-Del:: ExitApp
 
 Gui(){ ;Display a little status windows with a button to open settings
 	return ;Work in Progress
@@ -557,7 +556,7 @@ ToggleDebug(){
 	global DEBUG:=!DEBUG
 }
 
-#Script self-editing
+; #Script self-editing
 Update(){
 	t:=A_TickCount ;/add a number at the end of the URL to avoid caching issues
 	versionURL := "https://raw.githubusercontent.com/ODawson-Git/DDS/master/lastVersionNumber?t="%t%
