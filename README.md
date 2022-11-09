@@ -5,9 +5,13 @@ Utility AutoHotKey script for Dungeon Defenders Awakened.
 <sub>The script reads colors on screen to know current game phase and hero being played, tell me your screen resolution if you're having issues. Only support main monitor for now on multiple monitors setups.</sub>
 ## Keybinds
 **F8**: Reload the script.  
-**Ctrl+G** (or **F9**): Auto G (only in build phase if not wave 1).  
-**Ctrl+Click** (or **F10**): Auto fire.  
-**Ctrl+RightClick**(or **F11**):   
-  Monk - Spam tower boost,  
-  Apprentice - Hero boost & right click,   
-  Squire - Hold Block
+**F9**: Auto G (only in build phase if not wave 1).  
+**F10**: Auto fire.  
+**F11**:   Ability spam
+- Monk - Spam tower boost,  
+- Apprentice - Hero boost & right click,   
+- Squire -
+- Rouge - 
+- Warden -
+
+<sub>**Note:** Updated by Wurzle#7136 for parity for current update, I have not been able to play the game much so feedback is appriciated - feel free to message</sub>

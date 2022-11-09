@@ -1,9 +1,9 @@
 ;Download https://www.autohotkey.com/download/ahk-install.exe to use this script.
-;Made by AFK on core#0614 , message me on discord if you need anything or have suggestions!
-v:=201120 ;Script version, yearmonthday
+;Made by AFK on core#0614 - updated by Wurzle#7136 , message me on discord if you need anything or have suggestions!
+v:=221109 ;Script version, yearmonthday
 ;#####vvvSETTINGS#### 
 DEBUG:=0
-readColorInBackground:=1 
+readColorInBackground:=1
 boostKeybind:="c"
 abilityKeybind:="f"
 dropManaKeybind:="m"
@@ -12,7 +12,6 @@ AutoFocusTheGame:=1
 GAtWarmUpPhase:=1
 PressSpaceOnLoading:=1
 DropManaAtBuildPhase:=0
-GenieOnAppBoost:=0
 ;####^^^SETTINGS#### 
 ;About readColorInBackground: the script reads colors on screen to know current game phase and hero being played. 
 ;  If you're having issues turn on DEBGUG:=1 (or use Ctrl+Alt+D) to check what the script is reading and if coordinates are correct.
@@ -90,14 +89,10 @@ Loop{ ;Main Loop
 }
 
 ; Keybinds
-~F8:: Reload ;Restart fresh, use it to stop AbilitySpam
-^g:: ;Ctrl+G and F9 both activate auto G
-~F9:: ActivateAutoG()
+F8:: Reload ;Restart fresh, use it to stop AbilitySpam
+F9:: ActivateAutoG() ;F9 activates auto G
 #ifWinActive, ahk_exe DDS-Win64-Shipping.exe
-F6:: Click ;  LockMouseOver() ;Lock item under your cursor
-~^LButton:: ;Ctrl+Click or F10 to AutoFire
 F10:: AutoFire() ;Auto attack depending on current hero
-^RButton::
 F11:: ActivateAbilitySpam() ;AbilitySpam() ;Spam right click on apprentice or tower boost on Monk (make sure abilityKeybind [line 9] is set the correct key)
 ^!d:: ToggleDebug() ;Ctrl+Alt+D
 
@@ -190,14 +185,13 @@ ActivateAutoG(){
 G(){
 	global beepSoundOnG
 	ControlSend,,{g down}, ahk_exe DDS-Win64-Shipping.exe
-		if(beepSoundOnG){
-			SoundBeep, 450, 50
-			Sleep, 370
-		}else{
-			Sleep, 420
-		}
+	if(beepSoundOnG){
+		SoundBeep, 450, 50
+		Sleep, 370
+	}else{
+		Sleep, 420
+	}
 	ControlSend,,{g up}, ahk_exe DDS-Win64-Shipping.exe
-
 }
 
 PopUp(){ ;Put the game in focus
@@ -216,7 +210,7 @@ CheckPhaseColor(){ ; Check the color of the ribbon behind Build Phase/Combat Pha
 	global phaseColorY
 	global DEBUG
 	
-	pX:=WinWidth-300
+	pX:=WinWidth-600
 	Progress, 4:OFF
 	Progress, 5:OFF
 	Progress, 6:OFF
@@ -337,6 +331,16 @@ CheckHeroColor(){ ;Check the color of the background behind the hero's head icon
 			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Series EV-A (%R% %G% %B%)
 		}
 		return "ev"
+	}else if(R>75 && R<85 && G>40 && G<65 && B>50 && B<70){
+		if(DEBUG){
+			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Warden (%R% %G% %B%)
+		}
+		return "warden"
+	}else if(R>85 && R<93 && G>0 && G<10 && B>50 && B<60){
+		if(DEBUG){
+			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Warden (%R% %G% %B%)
+		}
+		return "rouge"
 	}else{
 		if(DEBUG){
 			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,No color match (%R% %G% %B%)
@@ -349,10 +353,10 @@ AutoFire(){ ;Trigger normal attacks depending on class
 	global boostKeybind
 	sleep, 250 ;wait a bit to avoid MouseUp event from the real mouse in case it was activated using Ctrl+Click
 	hero := CheckHeroColor()
-	If(hero == "apprentice" || hero == "huntress" || hero == "squire"|| hero == "ev"){ 
+	If(hero == "apprentice" || hero == "huntress" || hero == "squire"|| hero == "ev"|| hero == "warden"){ 
 		ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,,,D
 	}
-	if(hero == "monk"){ 
+	if(hero == "monk"|| hero == "rouge"){ 
 		ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,D
 	}
 }
@@ -367,35 +371,24 @@ ActivateAbilitySpam(){
 	
 	if(hero == "monk"){
 		if(abilitySpamToggle){
-			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W215,, Spam Tower Boost (%abilityKeybind%): ON
+			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W215,, Spam Power Tower Boost (%abilityKeybind%): ON
 			AbilitySpam(hero)
 			Sleep, 400
 		}else{
-			Progress, 10:B zh0 fs18 CW272822 CTDC143C W190,, Spam Tower Boost: OFF
+			Progress, 10:B zh0 fs18 CW272822 CTDC143C W190,, Spam Power Tower Boost: OFF
 			Sleep, 200
 		}
 		Progress, 10: OFF
 	}else if(hero == "apprentice"){
 		if(abilitySpamToggle){
-			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W165,, Spam right click: ON
+			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W165,, Spam Rate Tower Boost: ON
 			AbilitySpam(hero)
 			Sleep, 400
 		}else{
-			Progress, 10:B zh0 fs18 CW272822 CTDC143C W170,, Spam right click: OFF
+			Progress, 10:B zh0 fs18 CW272822 CTDC143C W170,, Spam Rate Tower Boost: OFF
 			Sleep, 200
 		}
 		Progress, 10: OFF	
-	}else if(hero == "squire"){
-	if(abilitySpamToggle){
-			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W130,, Hold Block: ON
-			AbilitySpam(hero)
-			Sleep, 400
-		}else{
-			Progress, 10:B zh0 fs18 CW272822 CTDC143C W135,, Hold Block: OFF
-			ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,U
-			Sleep, 200
-		}
-		Progress, 10: OFF
 	}
 }
 
@@ -405,47 +398,31 @@ AbilitySpam(hero){ ;Spam right click on apprentice, towerboost on monk
 	global boostKeybind
 	global abilityTimer
 	global abilitySpamToggle
-	global GenieOnAppBoost
 
 	if(A_TickCount < abilityTimer){
 		return
 	}
 	
-	if(hero == "monk"){ ;Spam tower boost
+	if(hero == "monk"){ ;Spam tower boost on monk
 		ControlSend,,{%abilityKeybind%}, ahk_exe DDS-Win64-Shipping.exe
-		useEvery := 20100
+		useEvery := 19500
 		abilityTimer := A_TickCount+useEvery
 	}
 	
-	if(hero == "apprentice"){ ;Spam right click on apprentice
-			if(GenieOnAppBoost){ ;got genie
-				ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,D
-				Sleep, 150
-				ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,U
-				Sleep, 250
-				useEvery := 7650
-				abilityTimer := A_TickCount+useEvery
-			}else{ ;no genie - sad
-				ControlSend,,{ %boostKeybind% down}, ahk_exe DDS-Win64-Shipping.exe
-				Sleep, 100
-				ControlSend,,{%boostKeybind% up}, ahk_exe DDS-Win64-Shipping.exe
-				Sleep, 1100
-				ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,D
-				Sleep, 150
-				ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,U
-				Sleep, 850
-				ControlSend,,{%boostKeybind% down}, ahk_exe DDS-Win64-Shipping.exe
-				Sleep, 100
-				ControlSend,,{%boostKeybind% up}, ahk_exe DDS-Win64-Shipping.exe
-				useEvery := 6500
-				abilityTimer := A_TickCount+useEvery
-			}
-	}
-	
-	if(hero == "squire"){ ;Hold block, and refresh holding block twice a second in case it drops
-		ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,D		
-		useEvery := 500
-		abilityTimer := A_TickCount+useEvery
+	if(hero == "apprentice"){ ;Spam tower boost on apprentice
+			ControlSend,,{%boostKeybind% down}, ahk_exe DDS-Win64-Shipping.exe
+			Sleep, 100
+			ControlSend,,{%boostKeybind% up}, ahk_exe DDS-Win64-Shipping.exe
+			Sleep, 1200
+			ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,D
+			Sleep, 150
+			ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,U
+			Sleep, 850
+			ControlSend,,{%boostKeybind% down}, ahk_exe DDS-Win64-Shipping.exe
+			Sleep, 100
+			ControlSend,,{%boostKeybind% up}, ahk_exe DDS-Win64-Shipping.exe
+			useEvery := 5500
+			abilityTimer := A_TickCount+useEvery			
 	}
 }
 
@@ -500,17 +477,24 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues
 			phaseColorY := WinHeight*0.057
 			heroColorX := WinWidth*0.026
 			heroColorY := WinHeight*0.073
-			if(WinWidth !=1440){
-				Progress, B X0 ZHn0 CW272822 CT60D9EF,- WARNING - `n This script is untested on your current resolution so it might misfunction. Please tell AFK on core#0614 what resolution you're using. Thanks.
-				Sleep, 7500
-				Progress, OFF
-			}
 		}
 		if(WinWidth == 1920){ ;[1920x1200]
 			phaseColorX:= 1845
 			phaseColorY:= 65
 			heroColorX := 55
 			heroColorY := 95
+			if(!fullscreenWindowed){
+				phaseColorX:= phaseColorX+WinWidthWithTitle-WinWidth
+				phaseColorY:= phaseColorY+WinHeightWithTitle-WinHeight
+				heroColorX := heroColorX 
+				heroColorY := heroColorY+(WinHeightWithTitle-WinHeight)/1.8
+			}
+		}
+		if(WinWidth == 3072){ ;[3072x1920]
+			phaseColorX:= 1845*1.6
+			phaseColorY:= 65*1.6
+			heroColorX := 55*1.6
+			heroColorY := 95*1.6
 			if(!fullscreenWindowed){
 				phaseColorX:= phaseColorX+WinWidthWithTitle-WinWidth
 				phaseColorY:= phaseColorY+WinHeightWithTitle-WinHeight
@@ -579,11 +563,11 @@ ToggleDebug(){
 	global DEBUG:=!DEBUG
 }
 
-;#Script self-editing
+; #Script self-editing
 Update(){
 	t:=A_TickCount ;/add a number at the end of the URL to avoid caching issues
-	versionURL := "https://raw.githubusercontent.com/AFKoncore/DDS/master/lastVersionNumber?t="%t%
-	downloadURL:= "https://raw.githubusercontent.com/AFKoncore/DDS/master/DDS.ahk?t="%t%
+	versionURL := "https://raw.githubusercontent.com/ODawson-Git/DDS/main/lastVersionNumber?t="%t%
+	downloadURL:= "https://raw.githubusercontent.com/ODawson-Git/DDS/main/DDS.ahk?t="%t%
 	global v
 	ErrorLevel := 0
 	hObject:=ComObjCreate("WinHttp.WinHttpRequest.5.1") ;Create the Object
