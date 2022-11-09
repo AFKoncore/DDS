@@ -3,7 +3,7 @@
 v:=221109 ;Script version, yearmonthday
 ;#####vvvSETTINGS#### 
 DEBUG:=0
-readColorInBackground:=0
+readColorInBackground:=1
 boostKeybind:="c"
 abilityKeybind:="f"
 dropManaKeybind:="m"
