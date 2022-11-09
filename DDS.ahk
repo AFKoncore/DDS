@@ -331,12 +331,12 @@ CheckHeroColor(){ ;Check the color of the background behind the hero's head icon
 			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Series EV-A (%R% %G% %B%)
 		}
 		return "ev"
-	}else if(R>80 && R<85 && G>60 && G<65 && B>60 && B<70){
+	}else if(R>75 && R<85 && G>40 && G<65 && B>50 && B<70){
 		if(DEBUG){
 			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Warden (%R% %G% %B%)
 		}
 		return "warden"
-	}else if(R>85 && R<90 && G>0 && G<10 && B>50 && B<60){
+	}else if(R>85 && R<93 && G>0 && G<10 && B>50 && B<60){
 		if(DEBUG){
 			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Warden (%R% %G% %B%)
 		}
@@ -477,17 +477,24 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues
 			phaseColorY := WinHeight*0.057
 			heroColorX := WinWidth*0.026
 			heroColorY := WinHeight*0.073
-			if(WinWidth !=1440){
-				Progress, B X0 ZHn0 CW272822 CT60D9EF,- WARNING - `n This script is untested on your current resolution so it might misfunction. Please tell AFK on core#0614 what resolution you're using. Thanks.
-				Sleep, 7500
-				Progress, OFF
-			}
 		}
 		if(WinWidth == 1920){ ;[1920x1200]
 			phaseColorX:= 1845
 			phaseColorY:= 65
 			heroColorX := 55
 			heroColorY := 95
+			if(!fullscreenWindowed){
+				phaseColorX:= phaseColorX+WinWidthWithTitle-WinWidth
+				phaseColorY:= phaseColorY+WinHeightWithTitle-WinHeight
+				heroColorX := heroColorX 
+				heroColorY := heroColorY+(WinHeightWithTitle-WinHeight)/1.8
+			}
+		}
+		if(WinWidth == 3072){ ;[3072x1920]
+			phaseColorX:= 1845*1.6
+			phaseColorY:= 65*1.6
+			heroColorX := 55*1.6
+			heroColorY := 95*1.6
 			if(!fullscreenWindowed){
 				phaseColorX:= phaseColorX+WinWidthWithTitle-WinWidth
 				phaseColorY:= phaseColorY+WinHeightWithTitle-WinHeight
