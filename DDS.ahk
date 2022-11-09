@@ -89,12 +89,10 @@ Loop{ ;Main Loop
 }
 
 ; Keybinds
-~F8:: Reload ;Restart fresh, use it to stop AbilitySpam
-~F9:: ActivateAutoG() ;F9 activates auto G
+F8:: Reload ;Restart fresh, use it to stop AbilitySpam
+F9:: ActivateAutoG() ;F9 activates auto G
 #ifWinActive, ahk_exe DDS-Win64-Shipping.exe
-~^LButton:: ;Ctrl+Click or F10 to AutoFire
 F10:: AutoFire() ;Auto attack depending on current hero
-^RButton::
 F11:: ActivateAbilitySpam() ;AbilitySpam() ;Spam right click on apprentice or tower boost on Monk (make sure abilityKeybind [line 9] is set the correct key)
 ^!d:: ToggleDebug() ;Ctrl+Alt+D
 Del:: ExitApp
