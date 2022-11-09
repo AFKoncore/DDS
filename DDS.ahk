@@ -559,8 +559,8 @@ ToggleDebug(){
 ; #Script self-editing
 Update(){
 	t:=A_TickCount ;/add a number at the end of the URL to avoid caching issues
-	versionURL := "https://raw.githubusercontent.com/ODawson-Git/DDS/master/lastVersionNumber?t="%t%
-	downloadURL:= "https://raw.githubusercontent.com/ODawson-Git/DDS/master/DDS.ahk?t="%t%
+	versionURL := "https://raw.githubusercontent.com/ODawson-Git/DDS/main/lastVersionNumber?t="%t%
+	downloadURL:= "https://raw.githubusercontent.com/ODawson-Git/DDS/main/DDS.ahk?t="%t%
 	global v
 	ErrorLevel := 0
 	hObject:=ComObjCreate("WinHttp.WinHttpRequest.5.1") ;Create the Object
