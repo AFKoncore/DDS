@@ -1,3 +1,6 @@
+221111
+- Changed default value for readColorInBackground until I look into it|
+
 221109:
 - Added Warden and Rouge support (Only tested on 1920x1080, 3072x1920)
 - Tweaked monk and apprentice ability timer.
