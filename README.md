@@ -16,4 +16,4 @@ Utility AutoHotKey script for Dungeon Defenders Awakened.
 - Rouge - 
 - Warden -
 
-<sub>**Note:** Updated by Wurzle#7136 for parity for current update, I have not been able to play the game much so feedback is appriciated - feel free to message</sub>
+<sub>**Note:** Updated by Wurzle#7136 for parity for current update (and have simplified it for my small brain), I have not been able to play the game much so feedback is appriciated - feel free to message</sub>
