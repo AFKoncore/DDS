@@ -1,9 +1,8 @@
 ;Download https://www.autohotkey.com/download/ahk-install.exe to use this script.
 ;Made by AFK on core#0614 - updated by Wurzle#7136 , message me on discord if you need anything or have suggestions!
-v:=221111 ;Script version, yearmonthday
+v:=221114 ;Script version, yearmonthday
 ;#####vvvSETTINGS#### 
 DEBUG:=0
-readColorInBackground:=0
 boostKeybind:="c"
 abilityKeybind:="f"
 dropManaKeybind:="m"
@@ -12,11 +11,7 @@ GAtWarmUpPhase:=1
 PressSpaceOnLoading:=1
 DropManaAtBuildPhase:=0
 ;####^^^SETTINGS#### 
-;About readColorInBackground: the script reads colors on screen to know current game phase and hero being played. 
 ;  If you're having issues turn on DEBGUG:=1 (or use Ctrl+Alt+D) to check what the script is reading and if coordinates are correct.
-;  Default is 1 and will read from the game's window even in background, but that way is not working for some people. 
-;  0 will read the color from screen and should work everytime, but you need to keep the top right corner of the game's window visible on screen.
-;
 #SingleInstance Force
 CoordMode, Pixel, Screen
 CoordMode, Mouse, Screen ;Change coordinate to be relative to the screen and not the current active window
@@ -102,27 +97,9 @@ Gui(){ ;Display a little status windows with a button to open settings
 	return ;Work in Progress
 } 
 
-PixelColorSimple(pc_x, pc_y){ ;Gets pixel color even if the window is in background ;Thanks to Lexikos https://github.com/Lexikos/AutoHotkey_L
-	global WinID
-	pc_wID:= WinID
-    if (pc_wID) {
-        pc_hDC := DllCall("GetDC", "UInt", pc_wID)
-        pc_fmtI := A_FormatInteger
-        SetFormat, IntegerFast, Hex
-        pc_c := DllCall("GetPixel", "UInt", pc_hDC, "Int", pc_x, "Int", pc_y, "UInt")
-        pc_c := pc_c >> 16 & 0xff | pc_c & 0xff00 | (pc_c & 0xff) << 16
-        pc_c .= ""
-        SetFormat, IntegerFast, %pc_fmtI%
-        DllCall("ReleaseDC", "UInt", pc_wID, "UInt", pc_hDC)
-		pc_c := "0x" SubStr("000000" SubStr(pc_c, 3), -5)
-        return pc_c ;
-    }
-}
-
 ActivateAutoG(){
 	global autoG	
 	global waitNextCombatPhase
-	global readColorInBackground
 	global phaseColorX
 	global phaseColorY
 	global groupG
@@ -172,7 +149,6 @@ PopUp(){ ;Put the game in focus
 }
 
 CheckPhaseColor(){ ; Check the color of the ribbon behind Build Phase/Combat Phase
-	global readColorInBackground
 	global WinX
 	global WinY
 	global WinWidth
@@ -185,11 +161,7 @@ CheckPhaseColor(){ ; Check the color of the ribbon behind Build Phase/Combat Pha
 	Progress, 5:OFF
 	Progress, 6:OFF
 	
-	if(readColorInBackground){
-		ColorCheck := PixelColorSimple(phaseColorX, phaseColorY)
-	}else{
-		PixelGetColor, ColorCheck, phaseColorX, phaseColorY, RGB 
-	}
+	PixelGetColor, ColorCheck, phaseColorX, phaseColorY, RGB 
 	StringTrimLeft, ColorCheck, ColorCheck, 2
 	R := Format("{:u}", "0x"+SubStr(ColorCheck, 1, 2))
 	G := Format("{:u}", "0x"+SubStr(ColorCheck, 3, 2))
@@ -245,7 +217,6 @@ CheckPhaseColor(){ ; Check the color of the ribbon behind Build Phase/Combat Pha
 
 CheckHeroColor(){ ;Check the color of the background behind the hero's head icon
 	;/!\ TODO: Fix the weird bug with Windowed max res with DEBUG off
-	global readColorInBackground
 	global DEBUG
 	global WinX
 	global WinY
@@ -259,11 +230,7 @@ CheckHeroColor(){ ;Check the color of the background behind the hero's head icon
 	Progress, 2:OFF
 	Progress, 3:OFF
 	
-	if(readColorInBackground){	
-		ColorCheck := PixelColorSimple(heroColorX, heroColorY)
-	}else{
-		PixelGetColor, ColorCheck, heroColorX, heroColorY, RGB 
-	}
+	PixelGetColor, ColorCheck, heroColorX, heroColorY, RGB 
 	StringTrimLeft, ColorCheck, ColorCheck, 2
 	R := Format("{:u}", "0x"+SubStr(ColorCheck, 1, 2))
 	G := Format("{:u}", "0x"+SubStr(ColorCheck, 3, 2))
@@ -549,8 +516,8 @@ ToggleGroupG(){
 ; #Script self-editing
 Update(){
 	t:=A_TickCount ;/add a number at the end of the URL to avoid caching issues
-	versionURL := "https://raw.githubusercontent.com/ODawson-Git/DDS/main/lastVersionNumber?t="%t%
-	downloadURL:= "https://raw.githubusercontent.com/ODawson-Git/DDS/main/DDS.ahk?t="%t%
+	versionURL := "https://raw.githubusercontent.com/ODawson-Git/DDS/staging/lastVersionNumber?t="%t%
+	downloadURL:= "https://raw.githubusercontent.com/ODawson-Git/DDS/staging/DDS.ahk?t="%t%
 	global v
 	ErrorLevel := 0
 	hObject:=ComObjCreate("WinHttp.WinHttpRequest.5.1") ;Create the Object
