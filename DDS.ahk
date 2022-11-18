@@ -129,7 +129,7 @@ PixelColorSimple(pc_x, pc_y){ ;Gets pixel color even if the window is in backgro
         pc_c .= ""
         SetFormat, IntegerFast, %pc_fmtI%
         DllCall("ReleaseDC", "UInt", pc_wID, "UInt", pc_hDC)
-	pc_c := "0x" SubStr("000000" SubStr(pc_c, 3), -5)
+	        pc_c := "0x" SubStr("000000" SubStr(pc_c, 3), -5)
         return pc_c ;
     }
 }
