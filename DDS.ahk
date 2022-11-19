@@ -1,6 +1,6 @@
 ;Download https://www.autohotkey.com/download/ahk-install.exe to use this script.
 ;Made by AFK on core#0614 - updated by Wurzle#7136 , message me on discord if you need anything or have suggestions!
-v:=221118 ;Script version, yearmonthday
+v:=221119 ;Script version, yearmonthday
 ;#####vvvSETTINGS#### 
 DEBUG:=0
 readColorInBackground:=0 ; 0 for off, 1 for Lexicos colour background checking
