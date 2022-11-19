@@ -11,7 +11,7 @@ repairTowerKeybind:="r"
 repairInterval:= 100 ;milliseconds (how often to check for something to repair)
 ; readColorInBackground is off by default as broken for most users
 AutoFocusTheGame:=1
-repairAtBuild=1
+repairAtBuildPhase=0
 GAtWarmUpPhase:=1
 PressSpaceOnLoading:=1
 DropManaAtBuildPhase:=0
@@ -35,7 +35,7 @@ Loop{ ;Main Loop
 	global abilityTimer
 	global repairSpamToggle
 	global repairTimer
-	global repairAtBuild
+	global repairAtBuildPhase
 	global hero
 	global phase
 	global autoG
@@ -52,7 +52,7 @@ Loop{ ;Main Loop
 			PopUp()
 		}	
 	}else if(phase == "build"){
-		if(repairSpamToggle && repairAtBuild){
+		if(repairSpamToggle && repairAtBuildPhase){
 			RepairSpam(wrench)
 		}
 		if(DropManaAtBuildPhase){
@@ -471,7 +471,6 @@ RepairSpam(wrench){
 	global repairTowerKeybind
 	global repairTimer
 	global abilitySpamToggle
-	global repairAtBuild
 
 	if(A_TickCount < repairTimer){
 		return
