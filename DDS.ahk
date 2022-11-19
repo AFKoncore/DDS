@@ -8,10 +8,8 @@ boostKeybind:="c"
 abilityKeybind:="f"
 dropManaKeybind:="m"
 repairTowerKeybind:="r"
-repairInterval:= 200 ;milliseconds
-repairDuration:= 1200 ;milliseconds 
+repairInterval:= 100 ;milliseconds (how often to check for something to repair)
 ; readColorInBackground is off by default as broken for most users
-;!!!! Total repairInterval + repairDuration <= 5570 for app boost <= 19370 for monk boost !!! 
 AutoFocusTheGame:=1
 repairAtBuild=1
 GAtWarmUpPhase:=1
@@ -43,7 +41,8 @@ Loop{ ;Main Loop
 	global autoG
 	;
 	phase := CheckPhaseColor() ;get the color of the ribbon top right of the screen to know the current phase
-	hero := CheckHeroColor() 
+	hero := CheckHeroColor()
+	wrench := CheckRepairColor()
 	;
 	if(phase == "warmup" && !waitNextCombatPhase){
 		waitNextCombatPhase := true ;Wait wave2 to press G as to not screw up the first build phase
@@ -54,7 +53,7 @@ Loop{ ;Main Loop
 		}	
 	}else if(phase == "build"){
 		if(repairSpamToggle && repairAtBuild){
-			RepairSpam()
+			RepairSpam(wrench)
 		}
 		if(DropManaAtBuildPhase){
 				ControlSend,,{%dropManaKeybind% down}, ahk_exe DDS-Win64-Shipping.exe
@@ -71,10 +70,16 @@ Loop{ ;Main Loop
 		}	
 	}else if(phase == "combat" || phase == "tavern" || phase == "boss"){	
 		waitNextCombatPhase := false
-		if(abilitySpamToggle){
-			AbilitySpam(hero)
+		if(abilitySpamToggle && repairSpamToggle && abilityTimer-A_TickCount > 100){ ;if time before using ability is sufficient, repair again
+			RepairSpam(wrench)
+		}else if(abilitySpamToggle && repairSpamToggle){
+			AbilitySpam(hero, wrench)
+			Sleep, 500
+			RepairSpam(wrench)
+		}else if(abilitySpamToggle){
+			AbilitySpam(hero, wrench)
 		}else if(repairSpamToggle){
-			RepairSpam()
+			RepairSpam(wrench)
 		}
 	}else if(phase == "loading"){
 		if(PressSpaceOnLoading){
@@ -88,9 +93,6 @@ Loop{ ;Main Loop
 	}else if(phase == "combat" || phase == "build" || phase == "warmup"){
 		mapFinished := false
 	}
-	;
-	Gui()
-	;
 	sleepTime := 1000
 	sleepTime2 := 1000
 	sleepTime3 := 1000
@@ -112,10 +114,6 @@ F10:: ActivateAutoRepair()
 ^RButton:: AutoFire() ;Auto attack depending on current hero
 F11:: ActivateAbilitySpam() ;AbilitySpam() ;Spam right click on apprentice or tower boost on Monk (make sure abilityKeybind [line 9] is set the correct key)
 ^!d:: ToggleDebug() ;Ctrl+Alt+D
-
-Gui(){ ;Display a little status windows with a button to open settings
-	return ;Work in Progress
-} 
 
 PixelColorSimple(pc_x, pc_y){ ;Gets pixel color even if the window is in background ;Thanks to Lexikos https://github.com/Lexikos/AutoHotkey_L
 	global WinID
@@ -142,7 +140,6 @@ ActivateAutoG(){
 	global groupG
 	
 	autoG := !autoG
-	Gui()
 	if(autoG){
 		if(CheckPhaseColor() == "build"){
 			G()
@@ -157,6 +154,19 @@ ActivateAutoG(){
 		Sleep, 500
 		Progress, OFF
 	}
+}
+
+ToggleGroupG(){
+	global groupG:=!groupG
+	global autoG
+	if(groupG){
+		autoG := true
+		Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W95,, GroupG: ON
+	}else if(!groupG){
+		Progress, 10:B zh0 fs18 CW272822 CTDC143C W100,, GroupG: OFF
+	}
+	Sleep, 500
+	Progress, 10: OFF
 }
 
 G(){
@@ -337,6 +347,91 @@ CheckHeroColor(){ ;Check the color of the background behind the hero's head icon
 	}
 }
 
+CheckRepairColor(){
+	global readColorInBackground
+	global DEBUG
+	global WinX
+	global WinY
+	global WinWidth
+	global WinHeight
+	global repairColorX1
+	global repairColorX2
+	global repairColorY1
+	global repairColorY2
+
+	pX := WinX - 900
+	Progress, 7: OFF
+	Progress, 8:OFF
+	Progress, 9:OFF
+	Progress, 10:OFF
+	
+	if(readColorInBackground){	
+		ColorCheck1 := PixelColorSimple(repairColorX1, repairColorY1)
+		ColorCheck2 := PixelColorSimple(repairColorX2, repairColorY2)
+	}else{
+		PixelGetColor, ColorCheck1, repairColorX1, repairColorY1, RGB
+		PixelGetColor, ColorCheck2, repairColorX2, repairColorY2, RGB 
+	}
+	StringTrimLeft, ColorCheck1, ColorCheck1, 2
+	R1 := Format("{:u}", "0x"+SubStr(ColorCheck1, 1, 2))
+	G1 := Format("{:u}", "0x"+SubStr(ColorCheck1, 3, 2))
+	B1 := Format("{:u}", "0x"+SubStr(ColorCheck1, 5, 2))
+	StringTrimLeft, ColorCheck2, ColorCheck2, 2
+	R2 := Format("{:u}", "0x"+SubStr(ColorCheck2, 1, 2))
+	G2 := Format("{:u}", "0x"+SubStr(ColorCheck2, 3, 2))
+	B2 := Format("{:u}", "0x"+SubStr(ColorCheck2, 5, 2))
+	pX1:=repairColorX1+WinX
+	pY1:=repairColorY1+WinY
+	pX2:=repairColorX2+WinX
+	pY2:=repairColorY2+WinY
+	if(DEBUG){
+		Progress, 8:B X%pX1% Y%pY1% CW00FFFF H2 W9
+		Progress, 9:B X%pX2% Y%pY2% CWFF0000 H9 W2
+	}
+
+	if(R1>250 && G1==0 && B1==0 && R2>250 && G2==0 && B2==0){
+		if(DEBUG){
+			Progress, 7:B X%pX1% Y0 cw%ColorCheck1% ZHn0,Red Wrench (%R1% %G1% %B1%)
+			Progress, 10:B X%pX1% Y30 cw%ColorCheck2% ZHn0,Red Wrench (%R2% %G2% %B2%)
+		}
+		return "redwrench"
+	}else if(R1>250 && G1==0 && B1==0){
+		if(DEBUG){
+			Progress, 7:B X%pX1% Y0 cw%ColorCheck1% ZHn0,Red Wrench (%R1% %G1% %B1%)
+			Progress, 10:B X%pX1% Y30 cw%ColorCheck1% ZHn0,No color match (%R2% %G2% %B2%)
+		}
+		return "nowrench"
+	}else if(R1>250 && G1==0 && B1==0){
+		if(DEBUG){
+			Progress, 7:B X%pX1% Y0 cw%ColorCheck1% ZHn0,No color match (%R1% %G1% %B1%)
+			Progress, 10:B X%pX1% Y30 cw%ColorCheck2% ZHn0,Red Wrench (%R2% %G2% %B2%)
+		}
+		return "nowrench"
+	}if(G1>250 && R1==0 && B1==0 && G2>250 && R2==0 && B2==0){
+		if(DEBUG){
+			Progress, 7:B X%pX1% Y0 cw%ColorCheck1% ZHn0,Green Wrench (%R1% %G1% %B1%)
+			Progress, 10:B X%pX1% Y30 cw%ColorCheck2% ZHn0,Green Wrench (%R2% %G2% %B2%)
+		}
+		return "greenwrench"
+	}else if(G1>250 && R1==0 && B1==0){
+		if(DEBUG){
+			Progress, 7:B X%pX1% Y0 cw%ColorCheck1% ZHn0,Green Wrench (%R1% %G1% %B1%)
+			Progress, 10:B X%pX1% Y30 cw%ColorCheck1% ZHn0,No color match (%R2% %G2% %B2%)
+		}
+		return "nowrench"
+	}else if(G1>250 && R1==0 && B1==0){
+		if(DEBUG){
+			Progress, 7:B X%pX1% Y0 cw%ColorCheck1% ZHn0,No color match (%R1% %G1% %B1%)
+			Progress, 10:B X%pX1% Y30 cw%ColorCheck2% ZHn0,Green Wrench (%R2% %G2% %B2%)
+		}
+		return "nowrench"
+	}else if(DEBUG){
+		Progress, 7:B X%pX1% Y0 cw%ColorCheck1% ZHn0,No color match (%R1% %G1% %B1%)
+		Progress, 10:B X%pX1% Y30 cw%ColorCheck1% ZHn0,No color match (%R2% %G2% %B2%)
+	}
+	return "nowrench"
+}
+
 AutoFire(){ ;Trigger normal attacks depending on class
 	global DEBUG
 	global boostKeybind
@@ -360,39 +455,39 @@ ActivateAutoRepair(){ ;Repair in a given interval
 	repairSpamToggle:= !repairSpamToggle
 
 	if(repairSpamToggle){
-		Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W250,, Spam Repair (%repairTowerKeybind%) every %repairInterval%ms for %repairDuration%ms: ON
+		Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W230,, Spam Repair (%repairTowerKeybind%) every %repairInterval%: ON
 		Sleep, 800
 		Progress, 10: OFF
 	}else{
 		Progress, 10:B zh0 fs18 CW272822 CTDC143C W190,, Spam Repair (%repairTowerKeybind%): OFF
+		ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,
 		Sleep, 500
 	}
 	Progress, 10: OFF
 }
 
-RepairSpam(){
-	global repairDuration
+RepairSpam(wrench){
 	global repairInterval
 	global repairTowerKeybind
 	global repairTimer
 	global abilitySpamToggle
 	global repairAtBuild
 
-	if(!repairAtBuild){
-		if(abilitySpamToggle){
-			return
-		}
-	}
-
 	if(A_TickCount < repairTimer){
 		return
 	}
 	
-	ControlSend,,{%repairTowerKeybind%}, ahk_exe DDS-Win64-Shipping.exe
-	Sleep, 100
-	ControlClick,, ahk_exe DDS-Win64-Shipping.exe
-	Sleep, repairDuration
-	ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,
+	if(wrench == "nowrench"){
+		ControlSend,,{%repairTowerKeybind%}, ahk_exe DDS-Win64-Shipping.exe
+	}
+
+	if(wrench == "greenwrench"){
+		ControlClick,, ahk_exe DDS-Win64-Shipping.exe
+	}
+
+	if(wrench == "redwrench"){
+			return
+	}
 
 	useEvery := repairInterval
 	repairTimer := A_TickCount + useEvery
@@ -401,9 +496,9 @@ RepairSpam(){
 ActivateAbilitySpam(){
 	global abilitySpamToggle
 	global abilityKeybind
+	global boostKeybind
 	
 	abilitySpamToggle:= !abilitySpamToggle
-	Gui()
 	hero := CheckHeroColor()
 
 	if(hero == "monk"){
@@ -411,23 +506,32 @@ ActivateAbilitySpam(){
 			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W215,, Spam Power Tower Boost (%abilityKeybind%): ON
 			Sleep, 500
 		}else{
-			Progress, 10:B zh0 fs18 CW272822 CTDC143C W190,, Spam Power Tower Boost: OFF
+			Progress, 10:B zh0 fs18 CW272822 CTDC143C W205,, Spam Power Tower Boost: OFF
 			Sleep, 500
 		}
 		Progress, 10: OFF
 	}else if(hero == "apprentice"){
 		if(abilitySpamToggle){
-			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W165,, Spam Rate Tower Boost: ON
+			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W210,, Spam Rate Tower Boost (%boostKeybind%): ON
 			Sleep, 500
 		}else{
-			Progress, 10:B zh0 fs18 CW272822 CTDC143C W170,, Spam Rate Tower Boost: OFF
+			Progress, 10:B zh0 fs18 CW272822 CTDC143C W205,, Spam Rate Tower Boost: OFF
+			Sleep, 500
+		}
+		Progress, 10: OFF	
+	}else if(hero == "summoner"){
+		if(abilitySpamToggle){
+			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W185,, Spam Flash Heal Tower (%abilityKeybind%): ON
+			Sleep, 500
+		}else{
+			Progress, 10:B zh0 fs18 CW272822 CTDC143C W190,, Spam Flash Heal Tower: OFF
 			Sleep, 500
 		}
 		Progress, 10: OFF	
 	}
 }
 
-AbilitySpam(hero){ ;Spam right click on apprentice, towerboost on monk
+AbilitySpam(hero, wrench){ ;Spam right click on apprentice, towerboost on monk
 	global DEBUG
 	global abilityKeybind
 	global boostKeybind
@@ -435,56 +539,27 @@ AbilitySpam(hero){ ;Spam right click on apprentice, towerboost on monk
 	global abilitySpamToggle
 	global repairSpamToggle
 	global repairTowerKeybind
-	global repairDuration
 	global repairInterval
+	global abilityInUse
 
 	if(A_TickCount < abilityTimer){
 		return
 	}
 
-	totalRepairTime := 100 + repairDuration + repairInterval + 30
+	if(wrench == "redwrench" || wrench == "greenwrench"){
+		ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,
+	}
 	
 	if(hero == "monk"){ ;Spam tower boost on monk
 		useEvery := 19500
-		enoughTime := useEvery-totalRepairTime >= 0
-		repairRepetitions := Floor(useEvery / totalRepairTime)
-		loops := repairRepetitions
 
 		ControlSend,,{%abilityKeybind%}, ahk_exe DDS-Win64-Shipping.exe
 
-		if(repairSpamToggle && enoughTime){
-			Sleep, 500
-			Loop, %repairRepetitions%{
-				ControlSend,,{%repairTowerKeybind%}, ahk_exe DDS-Win64-Shipping.exe
-				Sleep, 100
-				ControlClick,, ahk_exe DDS-Win64-Shipping.exe
-				Sleep, repairDuration
-				ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,
-				Sleep, repairInterval
-				if(!repairSpamToggle){
-					loops := A_Index
-					break
-				}
-
-			}
-			useEvery := 19500 - 500 - (Min(loops, repairRepetitions) * totalRepairTime)
-		}else if(repairSpamToggle && !enoughTime){
-			Progress, 10:B zh0 fs18 CW272822 CTDC143C W260,, Not enough time to spam ability and repair
-			Sleep, 800
-			Progress, 10: OFF
-			Progress, 10:B zh0 fs18 CW272822 CTDC143C W260,, Disabling repair
-			Sleep, 800
-			repairSpamToggle := false
-			Progress, 10: OFF
-		}
 		abilityTimer := A_TickCount+useEvery
 	}
 	
 	if(hero == "apprentice"){ ;Spam tower boost on apprentice
 		useEvery := 5700
-		enoughTime := useEvery-totalRepairTime >= 0
-		repairRepetitions := Floor(useEvery / totalRepairTime)
-		loops := repairRepetitions
 
 		ControlSend,,{%boostKeybind%}, ahk_exe DDS-Win64-Shipping.exe
 		Sleep, 1200
@@ -494,30 +569,14 @@ AbilitySpam(hero){ ;Spam right click on apprentice, towerboost on monk
 		Sleep, 850
 		ControlSend,,{%boostKeybind%}, ahk_exe DDS-Win64-Shipping.exe
 
-		if(repairSpamToggle && enoughTime){
-			Sleep, 100
-			Loop, %repairRepetitions%{
-				ControlSend,,{%repairTowerKeybind%}, ahk_exe DDS-Win64-Shipping.exe
-				Sleep, 100
-				ControlClick,, ahk_exe DDS-Win64-Shipping.exe
-				Sleep, repairDuration
-				ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,
-				Sleep, repairInterval
-				if(!repairSpamToggle){
-					loops := A_Index
-					break
-				}
-			}
-			useEvery := 5700 - 100 - (Min(loops, repairRepetitions) * totalRepairTime)
-		}else if(repairSpamToggle && !enoughTime){
-			Progress, 10:B zh0 fs18 CW272822 CTDC143C W260,, Not enough time to spam ability and repair
-			Sleep, 800
-			Progress, 10: OFF
-			Progress, 10:B zh0 fs18 CW272822 CTDC143C W260,, Disabling repair
-			Sleep, 800
-			repairSpamToggle := false
-			Progress, 10: OFF
-		}
+		abilityTimer := A_TickCount+useEvery
+	}
+
+	if(hero == "summoner"){ ;Spam tower boost on apprentice
+		useEvery := 7000
+
+		ControlSend,,{%abilityKeybind%}, ahk_exe DDS-Win64-Shipping.exe
+
 		abilityTimer := A_TickCount+useEvery
 	}
 }
@@ -533,6 +592,10 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues
 	global phaseColorY
 	global heroColorX
 	global heroColorY
+	global repairColorX1
+	global repairColorX2
+	global repairColorY1
+	global repairColorY2
 	;Check for Update
 	Update()
 	;Get game's size
@@ -557,6 +620,10 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues
 	;Set coordinate to check for with CheckHeroColor() and CheckPhaseColor 
 	phaseColorX := WinWidth*0.97 ;Same X coord for all screen ratio	
 	heroColorX := WinWidth*0.03
+	repairColorX1 := WinWidth*0.49
+	repairColorY1 := WinHeight*0.51
+	repairColorX2 := WinWidth*0.51
+	repairColorY2 := WinHeight*0.49
 	;4/3
 	if(WinRatio == 3){ ;[1024x768] [1152x864] [1280x960]
 		phaseColorY := WinHeight*0.0945 
@@ -579,18 +646,6 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues
 			phaseColorY:= 65
 			heroColorX := 55
 			heroColorY := 95
-			if(!fullscreenWindowed){
-				phaseColorX:= phaseColorX+WinWidthWithTitle-WinWidth
-				phaseColorY:= phaseColorY+WinHeightWithTitle-WinHeight
-				heroColorX := heroColorX 
-				heroColorY := heroColorY+(WinHeightWithTitle-WinHeight)/1.8
-			}
-		}
-		if(WinWidth == 3072){ ;[3072x1920]
-			phaseColorX:= 1845*1.6
-			phaseColorY:= 65*1.6
-			heroColorX := 55*1.6
-			heroColorY := 95*1.6
 			if(!fullscreenWindowed){
 				phaseColorX:= phaseColorX+WinWidthWithTitle-WinWidth
 				phaseColorY:= phaseColorY+WinHeightWithTitle-WinHeight
@@ -657,19 +712,6 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues
 
 ToggleDebug(){
 	global DEBUG:=!DEBUG
-}
-
-ToggleGroupG(){
-	global groupG:=!groupG
-	global autoG
-	if(groupG){
-		autoG := true
-		Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W215,, GroupG: ON
-	}else if(!groupG){
-		Progress, 10:B zh0 fs18 CW272822 CTDC143C W215,, GroupG: OFF
-	}
-	Sleep, 500
-	Progress, 10: OFF
 }
 
 ; #Script self-editing
