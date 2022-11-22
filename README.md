@@ -8,20 +8,37 @@ Utility AutoHotKey script for Dungeon Defenders Awakened.
 
 **F8**: Reload the script.  
 
+**Ctrl+RMB**: Auto fire.  
+
 **F9**: Auto G (only in build phase if not wave 1)
+
+**Ctrl+F9**: Toggles between group G and solo G  
 
 **F10**: Auto repair 
 
 **F11**: Ability spam
-
-**Ctrl+F9**: Toggles between group G and solo G  
-
-**Ctrl+RMB**: Auto fire.  
-- Monk - Spam tower boost,  
+- Monk - Tower boost,  
 - Apprentice - Hero boost & right click,   
-- Squire -
+- Squire - Circular Slice
+- Huntress -
+- EV - 
 - Rouge - 
-- Warden -
+- Warden - 
 - Summoner - Spam heal tower
 
-<sub>**Note:** Updated by Wurzle#7136 for parity for current update (and have simplified it for my small brain), I have not been able to play the game much so feedback is appreciated - feel free to message</sub>
+<sub>Ability Spam cooldowns are customizable in the settings from line 7 in DDS.ahk</sub>
+
+**Ctrl+F11**: Boost spam
+- Monk - Hero boost
+- Apprentice -
+- Squire - Blood boil
+- Huntress -
+- EV - 
+- Rouge -
+- Warden - Wrath
+- Summoner - Pet boost
+
+<sub>Boost Spam durations are customizable in the settings from line 7 in DDS.ahk</sub>
+
+
+<sub>**Note:** Updated by Wurzle#7136 for parity for current update, I have not been able to play the game much so feedback is appreciated - feel free to message</sub>

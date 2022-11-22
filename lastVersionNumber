@@ -1,3 +1,10 @@
+221122:
+- Added offline toggle
+- Added spam boost feature and made compatible with repair and ability spam
+- Added Squire boost and ability
+- Added Summoner boost
+- Added Warden boost|
+
 221119:
 - Added summoner spam heal
 - Added wrench colour detection for better repairing abilities (tested on 1920x180, 3072x1920)|

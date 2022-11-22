@@ -1,22 +1,35 @@
 ;Download https://www.autohotkey.com/download/ahk-install.exe to use this script.
 ;Made by AFK on core#0614 - updated by Wurzle#7136 , message me on discord if you need anything or have suggestions!
-v:=221119 ;Script version, yearmonthday
+v:=221122 ;Script version, yearmonthday
+
+
+
 ;#####vvvSETTINGS#### 
 DEBUG:=0
-readColorInBackground:=0 ; 0 for off, 1 for Lexicos colour background checking
+readColorInBackground:=0 ; 0 for off, 1 for Lexicos colour background checking off by default as broken for most users
 boostKeybind:="c"
 abilityKeybind:="f"
 dropManaKeybind:="m"
 repairTowerKeybind:="r"
-repairInterval:= 100 ;milliseconds (how often to check for something to repair)
-; readColorInBackground is off by default as broken for most users
+repairInterval:=100 ;milliseconds (how often to check for something to repair)
 AutoFocusTheGame:=1
 repairAtBuildPhase=0
 GAtWarmUpPhase:=1
 PressSpaceOnLoading:=1
 DropManaAtBuildPhase:=0
+offline:=false ;stops checking for updates
+;all of these ability durations are how long to use the ability for (would depend on your mana regen) in milliseconds, you need to have enough mana in a cycle to use ability if using both
+monkBoostAbilityDuration:=20000 
+summonerBoostAbilityDuration:=20000 
+wardenBoostAbilityDuration:=20000 
+squireBoostAbilityDuration:=20000
+;all of these cooldowns are dependent on your ability, input seconds as seen in your spellbook to 3 decimal places
+squireAbilityCooldown:=3.833
 ;####^^^SETTINGS#### 
-;  If you're having issues turn on DEBGUG:=1 (or use Ctrl+Alt+D) to check what the script is reading and if coordinates are correct.
+
+
+
+; If you're having issues turn on DEBGUG:=1 (or use Ctrl+Alt+D) to check what the script is reading and if coordinates are correct.
 #SingleInstance Force
 CoordMode, Pixel, Screen
 CoordMode, Mouse, Screen ;Change coordinate to be relative to the screen and not the current active window
@@ -33,9 +46,15 @@ Loop{ ;Main Loop
 	global waitNextCombatPhase
 	global abilitySpamToggle
 	global abilityTimer
+	global boostAbilitySpamToggle
+	global boostAbilityTimer
+	global boostAbilityUsed
+	global abilityAnimationTime
+	global boostAnimationTime
 	global repairSpamToggle
 	global repairTimer
 	global repairAtBuildPhase
+	global repairInterval
 	global hero
 	global phase
 	global autoG
@@ -65,19 +84,44 @@ Loop{ ;Main Loop
 				G() ;Press G, works even if DDA is in background
 			}else if(AutoFocusTheGame){
 				PopUp() ;Will put the game in front at build phase if you tab out without activating autoG
+			}else if(!autoG){
+				if(boostAbilityUsed == 1 && boostAbilitySpamToggle){ ;if youre not pressing G instantly, disable boost until combat to save mana
+					ControlSend,,{%boostKeybind%}, ahk_exe DDS-Win64-Shipping.exe
+					boostAbilityUsed := 0
+				}
 			}
 			waitNextCombatPhase := true	
 		}	
 	}else if(phase == "combat" || phase == "tavern" || phase == "boss"){	
 		waitNextCombatPhase := false
-		if(abilitySpamToggle && repairSpamToggle && abilityTimer-A_TickCount > 100){ ;if time before using ability is sufficient, repair again
-			RepairSpam(wrench)
+		if(abilitySpamToggle && boostAbilitySpamToggle && repairSpamToggle){
+			if(abilityTimer-A_TickCount > repairInterval && boostAbilityTimer-A_TickCount > repairInterval){
+				RepairSpam(wrench) ;if time before using ability(s) is sufficient, repair
+			}else{
+				BoostAbilitySpam(hero, wrench)
+				wrench := CheckRepairColor() ;wrench may have changed
+				AbilitySpam(hero, wrench)
+			}
 		}else if(abilitySpamToggle && repairSpamToggle){
+			if(abilityTimer-A_TickCount > repairInterval){
+				RepairSpam(wrench)
+			}else{
+				AbilitySpam(hero, wrench)
+			}
+		}else if(boostAbilitySpamToggle && repairSpamToggle){
+			if(boostAbilityTimer-A_TickCount > repairInterval){
+				RepairSpam(wrench)
+			}else{
+				BoostAbilitySpam(hero, wrench)
+			}
+		}else if(abilitySpamToggle && boostAbilitySpamToggle){
+			BoostAbilitySpam(hero, wrench)
+			wrench := CheckRepairColor() ;wrench may have changed
 			AbilitySpam(hero, wrench)
-			Sleep, 500
-			RepairSpam(wrench)
 		}else if(abilitySpamToggle){
 			AbilitySpam(hero, wrench)
+		}else if(boostAbilitySpamToggle){
+			BoostAbilitySpam(hero, wrench)
 		}else if(repairSpamToggle){
 			RepairSpam(wrench)
 		}
@@ -96,12 +140,16 @@ Loop{ ;Main Loop
 	sleepTime := 1000
 	sleepTime2 := 1000
 	sleepTime3 := 1000
+	sleepTime4 := 1000
 	if(abilitySpamToggle && (phase == "tavern" || phase == "combat") && A_TickCount+sleepTime > abilityTimer){ ;If the ability is to be used soon it will wait for a shorter amount of time
 		sleepTime2 := abilityTimer-A_TickCount
 	}else if(repairSpamToggle && (phase == "tavern" || phase == "build" || phase == "combat") && A_TickCount+sleepTime > repairTimer){
 		sleepTime3 := repairTimer-A_TickCount
+	}else if(boostAbilitySpamToggle && (phase == "tavern" || phase == "build" || phase == "combat") && A_TickCount+sleepTime > boostAbilityTimer){
+		sleepTime4 := boostAbilityTimer-A_TickCount
 	}
-	Sleep, Min(sleepTime, sleepTime2, sleepTime3)
+	
+	Sleep, Min(sleepTime, sleepTime2, sleepTime3, sleepTime4)
 }
 
 ; Keybinds
@@ -113,6 +161,7 @@ F9:: ActivateAutoG() ;F9 activates auto G
 F10:: ActivateAutoRepair()
 ^RButton:: AutoFire() ;Auto attack depending on current hero
 F11:: ActivateAbilitySpam() ;AbilitySpam() ;Spam right click on apprentice or tower boost on Monk (make sure abilityKeybind [line 9] is set the correct key)
+^F11:: ActivateBoostAbilitySpam()
 ^!d:: ToggleDebug() ;Ctrl+Alt+D
 
 PixelColorSimple(pc_x, pc_y){ ;Gets pixel color even if the window is in background ;Thanks to Lexikos https://github.com/Lexikos/AutoHotkey_L
@@ -325,7 +374,7 @@ CheckHeroColor(){ ;Check the color of the background behind the hero's head icon
 			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Series EV-A (%R% %G% %B%)
 		}
 		return "ev"
-	}else if(R>75 && R<85 && G>40 && G<65 && B>50 && B<70){
+	}else if(R>75 && R<90 && G>40 && G<70 && B>50 && B<80){
 		if(DEBUG){
 			Progress, B X%WinX% Y0 cw%ColorCheck% ZHn0,Warden (%R% %G% %B%)
 		}
@@ -492,10 +541,163 @@ RepairSpam(wrench){
 	repairTimer := A_TickCount + useEvery
 }
 
+ActivateBoostAbilitySpam(){
+	global boostAbilitySpamToggle
+	global abilityKeybind
+	global boostKeybind
+
+	boostAbilitySpamToggle:= !boostAbilitySpamToggle
+	hero := CheckHeroColor()
+
+	if(hero == "monk"){
+		if(boostAbilitySpamToggle){
+			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W215,, Spam Hero Boost (%boostKeybind%): ON
+			Sleep, 500
+		}else{
+			Progress, 10:B zh0 fs18 CW272822 CTDC143C W205,, Spam Hero Boost: OFF
+			Sleep, 500
+		}
+		Progress, 10: OFF
+	}else if(hero == "summoner"){
+		if(boostAbilitySpamToggle){
+			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W185,, Spam Pet Boost (%boostKeybind%): ON
+			Sleep, 500
+		}else{
+			Progress, 10:B zh0 fs18 CW272822 CTDC143C W190,, Spam Pet Boost: OFF
+			Sleep, 500
+		}
+		Progress, 10: OFF	
+	}else if(hero == "warden"){
+		if(boostAbilitySpamToggle){
+			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W185,, Spam Wrath (%boostKeybind%): ON
+			Sleep, 500
+		}else{
+			Progress, 10:B zh0 fs18 CW272822 CTDC143C W190,, Spam Wrath: OFF
+			Sleep, 500
+		}
+		Progress, 10: OFF	
+	}else if(hero == "squire"){
+		if(boostAbilitySpamToggle){
+			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W160,, Spam Blood Boil (%boostKeybind%): ON
+			Sleep, 500
+		}else{
+			Progress, 10:B zh0 fs18 CW272822 CTDC143C W150,, Spam Blood Boil: OFF
+			Sleep, 500
+		}
+		Progress, 10: OFF	
+	}
+}
+
+BoostAbilitySpam(hero, wrench){
+	global DEBUG
+	global abilityKeybind
+	global boostKeybind
+	global boostAbilityTimer
+	global repairSpamToggle
+	global abilitySpamToggle
+	global boostAbilityUsed
+	global monkBoostAbilityDuration
+	global summonerBoostAbilityDuration
+	global wardenBoostAbilityDuration
+	global squireBoostAbilityDuration
+	global abilityAnimationTime
+	global boostAnimationTime
+
+	if(A_TickCount < boostAbilityTimer){
+		return
+	}
+
+	if(wrench == "redwrench" || wrench == "greenwrench"){
+		ControlClick,, ahk_exe DDS-Win64-Shipping.exe,,RIGHT,,
+	}
+
+	if(hero == "monk"){ ;Spam tower boost on monk
+		boostAnimationTime := 0
+		useEvery := 5000
+
+		ControlSend,,{%boostKeybind%}, ahk_exe DDS-Win64-Shipping.exe
+
+		boostAbilityTimer := A_TickCount
+		boostAbilityUsed += 1
+
+		if(boostAbilityUsed == 1){
+			boostAbilityTimer += monkBoostAbilityDuration
+			if(repairSpamToggle || abilitySpamToggle){
+				Sleep, boostAnimationTime
+			}
+		}else if(boostAbilityUsed == 2){
+			boostAbilityTimer += useEvery
+			boostAbilityUsed := 0
+		}
+	}
+
+	if(hero == "summoner"){ 
+		boostAnimationTime := 2000
+		useEvery := 5000
+
+		ControlSend,,{%boostKeybind%}, ahk_exe DDS-Win64-Shipping.exe
+
+		boostAbilityTimer := A_TickCount
+		boostAbilityUsed += 1
+
+		if(boostAbilityUsed == 1){
+			boostAbilityTimer += summonerBoostAbilityDuration
+			if(repairSpamToggle || abilitySpamToggle){
+				Sleep, boostAnimationTime
+			}
+		}else if(boostAbilityUsed == 2){
+			boostAbilityTimer += useEvery
+			boostAbilityUsed := 0
+		}
+	}
+
+	if(hero == "warden"){ 
+		boostAnimationTime := 1500
+		useEvery := 5000
+
+		ControlSend,,{%boostKeybind%}, ahk_exe DDS-Win64-Shipping.exe
+
+		boostAbilityTimer := A_TickCount
+		boostAbilityUsed += 1
+
+		if(boostAbilityUsed == 1){
+			boostAbilityTimer += wardenBoostAbilityDuration
+			if(repairSpamToggle || abilitySpamToggle){
+				Sleep, boostAnimationTime
+			}
+		}else if(boostAbilityUsed == 2){
+			boostAbilityTimer += useEvery
+			boostAbilityUsed := 0
+		}
+	}
+
+	if(hero == "squire"){
+		boostAnimationTime := 1250
+		abilityAnimationTime := 1000
+		useEvery := 5000
+
+		ControlSend,,{%boostKeybind%}, ahk_exe DDS-Win64-Shipping.exe
+
+		boostAbilityTimer := A_TickCount
+		boostAbilityUsed += 1
+
+		if(boostAbilityUsed == 1){
+			boostAbilityTimer += squireBoostAbilityDuration
+			if(repairSpamToggle || abilitySpamToggle){
+				Sleep, boostAnimationTime
+			}
+		}else if(boostAbilityUsed == 2){
+			boostAbilityTimer += useEvery
+			boostAbilityUsed := 0
+		}
+	}
+}
+
 ActivateAbilitySpam(){
 	global abilitySpamToggle
 	global abilityKeybind
 	global boostKeybind
+	global squireAbilityCooldown
 	
 	abilitySpamToggle:= !abilitySpamToggle
 	hero := CheckHeroColor()
@@ -520,10 +722,19 @@ ActivateAbilitySpam(){
 		Progress, 10: OFF	
 	}else if(hero == "summoner"){
 		if(abilitySpamToggle){
-			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W185,, Spam Flash Heal Tower (%abilityKeybind%): ON
+			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W190,, Spam Flash Heal Tower (%abilityKeybind%): ON
 			Sleep, 500
 		}else{
 			Progress, 10:B zh0 fs18 CW272822 CTDC143C W190,, Spam Flash Heal Tower: OFF
+			Sleep, 500
+		}
+		Progress, 10: OFF	
+	}else if(hero == "squire"){
+		if(abilitySpamToggle){
+			Progress, 10: B zh0 fs18 CW272822 CT7CFC00 W240,, Spam Circular Slice (%abilityKeybind%) every %squireAbilityCooldown%s: ON
+			Sleep, 500
+		}else{
+			Progress, 10:B zh0 fs18 CW272822 CTDC143C W190,, Spam Circular Slice: OFF
 			Sleep, 500
 		}
 		Progress, 10: OFF	
@@ -536,10 +747,11 @@ AbilitySpam(hero, wrench){ ;Spam right click on apprentice, towerboost on monk
 	global boostKeybind
 	global abilityTimer
 	global abilitySpamToggle
+	global boostAbilitySpamToggle
 	global repairSpamToggle
-	global repairTowerKeybind
-	global repairInterval
-	global abilityInUse
+	global boostAbilityTimer
+	global boostAbilitySpamToggle
+	global squireAbilityCooldown
 
 	if(A_TickCount < abilityTimer){
 		return
@@ -551,9 +763,13 @@ AbilitySpam(hero, wrench){ ;Spam right click on apprentice, towerboost on monk
 	
 	if(hero == "monk"){ ;Spam tower boost on monk
 		useEvery := 19500
+		abilityAnimationTime := 100
 
 		ControlSend,,{%abilityKeybind%}, ahk_exe DDS-Win64-Shipping.exe
 
+		if(repairSpamToggle || boostAbilitySpamToggle){
+			Sleep, abilityAnimationTime
+		}
 		abilityTimer := A_TickCount+useEvery
 	}
 	
@@ -568,20 +784,40 @@ AbilitySpam(hero, wrench){ ;Spam right click on apprentice, towerboost on monk
 		Sleep, 850
 		ControlSend,,{%boostKeybind%}, ahk_exe DDS-Win64-Shipping.exe
 
+		if(repairSpamToggle || boostAbilitySpamToggle){
+			Sleep, abilityAnimationTime
+		}
 		abilityTimer := A_TickCount+useEvery
 	}
 
 	if(hero == "summoner"){ ;Spam tower boost on apprentice
 		useEvery := 7000
+		abilityAnimationTime := 2000
 
 		ControlSend,,{%abilityKeybind%}, ahk_exe DDS-Win64-Shipping.exe
 
+		if(repairSpamToggle || boostAbilitySpamToggle){
+			Sleep, abilityAnimationTime
+		}
+		abilityTimer := A_TickCount+useEvery
+	}
+
+	if(hero == "squire"){ ;Spam tower boost on apprentice
+		useEvery := (squireAbilityCooldown * 1000) + 1 ;the spellbook rounds down and takes a second to spin
+		abilityAnimationTime := 1000
+
+		ControlSend,,{%abilityKeybind%}, ahk_exe DDS-Win64-Shipping.exe
+
+		if(repairSpamToggle || boostAbilitySpamToggle){
+			Sleep, abilityAnimationTime
+		}
 		abilityTimer := A_TickCount+useEvery
 	}
 }
 
 Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues with 1280x1024
 	global DEBUG
+	global offline
 	global WinID
 	global WinX
 	global WinY
@@ -595,8 +831,10 @@ Setup(){ ;Get game resolution and calculate various X/Y coordinates  ;/!\ issues
 	global repairColorX2
 	global repairColorY1
 	global repairColorY2
-	;Check for Update
-	Update()
+	;Check for Update if connection
+	if(!offline){
+		Update()
+	}
 	;Get game's size
 	WinGetPos, WinX, WinY,WinWidthWithTitle,WinHeightWithTitle, ahk_exe DDS-Win64-Shipping.exe
 	;DDL call to get client size thanks to /u/G33kDude https://www.reddit.com/r/AutoHotkey/comments/a62ieu/
